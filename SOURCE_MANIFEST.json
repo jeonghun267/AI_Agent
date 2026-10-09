@@ -1,0 +1,326 @@
+{
+  "format": "relo-reviewed-source-v1",
+  "createdAt": "2026-10-09T09:44:38.176Z",
+  "scope": "synthetic source/tests/reviewed evidence only; no prior Sites Git history",
+  "files": [
+    {
+      "path": ".env.example",
+      "size": 188,
+      "sha256": "6ba01fac49f2368b13494599fe473a496ee1c33dc1014d9180b7f21f854bd792",
+      "verifiedSourceSha256": "6ba01fac49f2368b13494599fe473a496ee1c33dc1014d9180b7f21f854bd792",
+      "normalization": "unchanged"
+    },
+    {
+      "path": ".gitattributes",
+      "size": 99,
+      "sha256": "41413013bb696c88409a1e43b374a8cbc89ccacddd243ce00cc2f0df4187127d",
+      "verifiedSourceSha256": "41413013bb696c88409a1e43b374a8cbc89ccacddd243ce00cc2f0df4187127d",
+      "normalization": "unchanged"
+    },
+    {
+      "path": ".gitignore",
+      "size": 362,
+      "sha256": "2dbaa9bfd88d595546ea8dc372f80d942a45bf3a3c0ac45e62b7ccb70c2211c0",
+      "verifiedSourceSha256": "8978d1907ff4792fd97df867a119a38ba6e8eeca53724e896ddd30238113e7a4",
+      "normalization": "CRLF-to-LF"
+    },
+    {
+      "path": "G2A_QA.md",
+      "size": 9143,
+      "sha256": "bafb5e96821b42e7d457576ce0197933567a732112451d10d7a59902847afad4",
+      "verifiedSourceSha256": "bafb5e96821b42e7d457576ce0197933567a732112451d10d7a59902847afad4",
+      "normalization": "unchanged"
+    },
+    {
+      "path": "README.md",
+      "size": 7562,
+      "sha256": "a09118b88cd4b32f9d490f06321cac706e9ddbda541f5beb8c7338a2f22b559f",
+      "verifiedSourceSha256": "60821305533fc58afac7a174834e1f690bc0983d9d9ecc18a5c2e2d8305da46a",
+      "normalization": "CRLF-to-LF"
+    },
+    {
+      "path": "dist/app.mjs",
+      "size": 43847,
+      "sha256": "b6967780bcd0871c4a16e3d1d7f48ad90c430673437540af0119c8870539e847",
+      "verifiedSourceSha256": "488883dd016d5f1f05c697a2b65b9393ea7a6883c5bd05929cd4d66d6c3ff387",
+      "normalization": "CRLF-to-LF"
+    },
+    {
+      "path": "dist/core.mjs",
+      "size": 16718,
+      "sha256": "892731585e020ab808a38ef523fa6a08652ae33ced6337ad6874e7cd37ebfd25",
+      "verifiedSourceSha256": "6bf4b30f2aa94117da1758a44e65be121f07bc41fee527f380085439deda1c38",
+      "normalization": "CRLF-to-LF"
+    },
+    {
+      "path": "dist/dori-favicon.svg",
+      "size": 816,
+      "sha256": "c4449631d72c8af48fd157431f5102228bf2cc2807fe7c150037a242da458eb0",
+      "verifiedSourceSha256": "c4449631d72c8af48fd157431f5102228bf2cc2807fe7c150037a242da458eb0",
+      "normalization": "unchanged"
+    },
+    {
+      "path": "dist/dori-mark.svg",
+      "size": 816,
+      "sha256": "c4449631d72c8af48fd157431f5102228bf2cc2807fe7c150037a242da458eb0",
+      "verifiedSourceSha256": "c4449631d72c8af48fd157431f5102228bf2cc2807fe7c150037a242da458eb0",
+      "normalization": "unchanged"
+    },
+    {
+      "path": "dist/dori-preview.html",
+      "size": 1920,
+      "sha256": "c5d2d319ff4557b7a7f07f405294466a11d43b83f041baf1c1fa7555aa8745a9",
+      "verifiedSourceSha256": "5d68584458e3979f0ef45f331116c75f053c2dd1ff3e815413783cd2e514ba5b",
+      "normalization": "CRLF-to-LF"
+    },
+    {
+      "path": "dist/dori-preview.mjs",
+      "size": 2686,
+      "sha256": "6b01159a2504584ce3e3261b11ad6fa73608c0b7b243976906bd07269dcf0b24",
+      "verifiedSourceSha256": "92edf84195bdae171a4498457954702907231396710185cd0434ab4bbd7362d3",
+      "normalization": "CRLF-to-LF"
+    },
+    {
+      "path": "dist/dori-touch-icon.png",
+      "size": 8783,
+      "sha256": "e47bb85bcdb753fac24ad88f7c7c51becee4b6c554d69b6836ce094a915e7638",
+      "verifiedSourceSha256": "e47bb85bcdb753fac24ad88f7c7c51becee4b6c554d69b6836ce094a915e7638",
+      "normalization": "unchanged"
+    },
+    {
+      "path": "dist/dori.css",
+      "size": 5005,
+      "sha256": "dfb18373d8dda42aa855a5d2ad7ae83d246ea81948a70fd0fb501ca2ad7bf245",
+      "verifiedSourceSha256": "2cd10313c0f98f7c2083e519432972490b77bf767c758c9c8af60e543de63f10",
+      "normalization": "CRLF-to-LF"
+    },
+    {
+      "path": "dist/dori.mjs",
+      "size": 8011,
+      "sha256": "c443bc6f93c905637fd20ae8865848ee97061905df542812f6d1393502dc9340",
+      "verifiedSourceSha256": "de17c52c468185ee561c5eb5cc0d2b6030221c1ffc9d9192093a605c4d217dfa",
+      "normalization": "CRLF-to-LF"
+    },
+    {
+      "path": "dist/dori.svg",
+      "size": 3232,
+      "sha256": "d15ae6de93270b85c32e136a82ad090b289423374b471273cee33b30e5739855",
+      "verifiedSourceSha256": "d15ae6de93270b85c32e136a82ad090b289423374b471273cee33b30e5739855",
+      "normalization": "unchanged"
+    },
+    {
+      "path": "dist/favicon.svg",
+      "size": 816,
+      "sha256": "c4449631d72c8af48fd157431f5102228bf2cc2807fe7c150037a242da458eb0",
+      "verifiedSourceSha256": "c4449631d72c8af48fd157431f5102228bf2cc2807fe7c150037a242da458eb0",
+      "normalization": "unchanged"
+    },
+    {
+      "path": "dist/index.html",
+      "size": 957,
+      "sha256": "475025242cc5cb56dc77b56a2cfe8e555348ecffeabeab1884f70d81bb9b4069",
+      "verifiedSourceSha256": "aed5f9b49826f1fb05179b2020ce41d2545a5594fb095a3bc7d0384bfaf26be7",
+      "normalization": "CRLF-to-LF"
+    },
+    {
+      "path": "dist/styles.css",
+      "size": 21764,
+      "sha256": "d2e7068d52cf3d5708546e79bccecf52f01f6f7c6691f56db65c15a0055a92df",
+      "verifiedSourceSha256": "45a3614cfc5f521cb4076ff7ebddae92835f3b0b70f7d2d86071d5eab55c9371",
+      "normalization": "CRLF-to-LF"
+    },
+    {
+      "path": "docs/screenshots/cases-1280.png",
+      "size": 59833,
+      "sha256": "4779d00dc50744edbb04bf83c85e7b713f13108383b21bd3276caf93fab13537",
+      "verifiedSourceSha256": "4779d00dc50744edbb04bf83c85e7b713f13108383b21bd3276caf93fab13537",
+      "normalization": "unchanged"
+    },
+    {
+      "path": "docs/screenshots/cases-390.png",
+      "size": 51255,
+      "sha256": "b02e8452d325173d061c8096eb4096b3f9ef08236561290311c0e068f113cccf",
+      "verifiedSourceSha256": "b02e8452d325173d061c8096eb4096b3f9ef08236561290311c0e068f113cccf",
+      "normalization": "unchanged"
+    },
+    {
+      "path": "docs/screenshots/receipt-1280.png",
+      "size": 71817,
+      "sha256": "7362110fc55d4c6d51afe92d00c095a49d30266588aaf5c35d38d7fa37ebd49a",
+      "verifiedSourceSha256": "7362110fc55d4c6d51afe92d00c095a49d30266588aaf5c35d38d7fa37ebd49a",
+      "normalization": "unchanged"
+    },
+    {
+      "path": "docs/verification/browser-evidence.json",
+      "size": 646,
+      "sha256": "d425c8e36b420c3d47396fdaa6ba1d41ad659575ce133a6abfd6b9b95ac54ead",
+      "verifiedSourceSha256": "d425c8e36b420c3d47396fdaa6ba1d41ad659575ce133a6abfd6b9b95ac54ead",
+      "normalization": "unchanged"
+    },
+    {
+      "path": "docs/verification/test-results.json",
+      "size": 1552,
+      "sha256": "1be6b23a577429b84dcf595b6e05db9adaac11ca49c9bf08c99af7fbb777ebd1",
+      "verifiedSourceSha256": "1be6b23a577429b84dcf595b6e05db9adaac11ca49c9bf08c99af7fbb777ebd1",
+      "normalization": "unchanged"
+    },
+    {
+      "path": "docs/verification/test-results.txt",
+      "size": 7819,
+      "sha256": "40e6a4179cab1b40c1e7b1a309d53b6d37e5e7f5d4d8b080011c1fd7f012e7c8",
+      "verifiedSourceSha256": "40e6a4179cab1b40c1e7b1a309d53b6d37e5e7f5d4d8b080011c1fd7f012e7c8",
+      "normalization": "unchanged"
+    },
+    {
+      "path": "operations/ai.mjs",
+      "size": 3248,
+      "sha256": "b6513c5c51941d1fe424cc587423072b9e2abadf7d9c80dc958b8e245745884c",
+      "verifiedSourceSha256": "b6513c5c51941d1fe424cc587423072b9e2abadf7d9c80dc958b8e245745884c",
+      "normalization": "unchanged"
+    },
+    {
+      "path": "operations/domain.mjs",
+      "size": 5416,
+      "sha256": "983ebec02529ad5f347eb813db0ac2dcdd67ef1dc57c6d6bf76ef7315eb1ac8f",
+      "verifiedSourceSha256": "983ebec02529ad5f347eb813db0ac2dcdd67ef1dc57c6d6bf76ef7315eb1ac8f",
+      "normalization": "unchanged"
+    },
+    {
+      "path": "operations/server.mjs",
+      "size": 9493,
+      "sha256": "844d791c2db88aaf5f22f28defcdfbb21ba1a2f0fc8a0b8be73a765cc7c7333a",
+      "verifiedSourceSha256": "844d791c2db88aaf5f22f28defcdfbb21ba1a2f0fc8a0b8be73a765cc7c7333a",
+      "normalization": "unchanged"
+    },
+    {
+      "path": "operations/store.mjs",
+      "size": 36151,
+      "sha256": "a0362f5d511a318cbdec80f08ad4cd13ba62afffda8b56cb35ba3236ac56ce8a",
+      "verifiedSourceSha256": "a0362f5d511a318cbdec80f08ad4cd13ba62afffda8b56cb35ba3236ac56ce8a",
+      "normalization": "unchanged"
+    },
+    {
+      "path": "operations/tests/browser.test.mjs",
+      "size": 16232,
+      "sha256": "446d4a46e6a0bba4c372ca514e02a111e224267536a79a8eaf854a54e9bcbf1e",
+      "verifiedSourceSha256": "446d4a46e6a0bba4c372ca514e02a111e224267536a79a8eaf854a54e9bcbf1e",
+      "normalization": "unchanged"
+    },
+    {
+      "path": "operations/tests/http.test.mjs",
+      "size": 19771,
+      "sha256": "374986e1fdc6fb60f9e18835914b49fd04d19f3c809979c85c0c9eec495d842e",
+      "verifiedSourceSha256": "374986e1fdc6fb60f9e18835914b49fd04d19f3c809979c85c0c9eec495d842e",
+      "normalization": "unchanged"
+    },
+    {
+      "path": "ops/app.mjs",
+      "size": 42621,
+      "sha256": "175b1cd104be0e5cb176b20e1521765e8fd1f3622b94f91d07020bdf6ed2dc01",
+      "verifiedSourceSha256": "175b1cd104be0e5cb176b20e1521765e8fd1f3622b94f91d07020bdf6ed2dc01",
+      "normalization": "unchanged"
+    },
+    {
+      "path": "ops/index.html",
+      "size": 758,
+      "sha256": "5ec7ceca4fa6e430a3c0c8a02c7e97c8bd78f7406e6727d613421a6bc056d2c7",
+      "verifiedSourceSha256": "5ec7ceca4fa6e430a3c0c8a02c7e97c8bd78f7406e6727d613421a6bc056d2c7",
+      "normalization": "unchanged"
+    },
+    {
+      "path": "ops/style.css",
+      "size": 13174,
+      "sha256": "1b628c0d947826506781edcd37cd619e98904b88fa4c80d6ded9c85f63893f8c",
+      "verifiedSourceSha256": "1b628c0d947826506781edcd37cd619e98904b88fa4c80d6ded9c85f63893f8c",
+      "normalization": "unchanged"
+    },
+    {
+      "path": "package-lock.json",
+      "size": 18876,
+      "sha256": "1415b08533b23c8b5c1754f9bd8b4f99a27e55480ae625617b6b3d87d2c73c23",
+      "verifiedSourceSha256": "b2968b205f94f8a03f195900986f755fd8b558fac31895d0517f7e212e6dc683",
+      "normalization": "CRLF-to-LF"
+    },
+    {
+      "path": "package.json",
+      "size": 955,
+      "sha256": "bd854459922759a9049ee61e19b6913ab38c05b80e7d80498543090f09674bd8",
+      "verifiedSourceSha256": "bd854459922759a9049ee61e19b6913ab38c05b80e7d80498543090f09674bd8",
+      "normalization": "unchanged"
+    },
+    {
+      "path": "scripts/export-snapshot.mjs",
+      "size": 2693,
+      "sha256": "ab1f1026fd0f9439f2de3a6de518c103e1915bd7585c71a4172b15ea22538075",
+      "verifiedSourceSha256": "ab1f1026fd0f9439f2de3a6de518c103e1915bd7585c71a4172b15ea22538075",
+      "normalization": "unchanged"
+    },
+    {
+      "path": "scripts/verify.mjs",
+      "size": 1953,
+      "sha256": "417dc349a833b50211427ab45109fe875aed79b4ed42e8e3952a24ac4838837c",
+      "verifiedSourceSha256": "417dc349a833b50211427ab45109fe875aed79b4ed42e8e3952a24ac4838837c",
+      "normalization": "unchanged"
+    },
+    {
+      "path": "server.mjs",
+      "size": 1723,
+      "sha256": "8dfd008435ec0cd99cb0f570b533d92d4eb965b6a9e9ac9cac4dba954b4d9a54",
+      "verifiedSourceSha256": "b9763e0abf68ee706bf7862d3b1e9e82b5ba884f59b9a0268cdc0a0d31fdc19c",
+      "normalization": "CRLF-to-LF"
+    },
+    {
+      "path": "tests/core.test.mjs",
+      "size": 5890,
+      "sha256": "bfe432d8a1e995713db60ee4a32c2bbcc1b9253b382a35284fb6f82b491985e9",
+      "verifiedSourceSha256": "13888ade7ca874198e8f2023053fff072b9d151b52e239b229b0fb1bfe4f9948",
+      "normalization": "CRLF-to-LF"
+    },
+    {
+      "path": "tests/dori-display.test.mjs",
+      "size": 5161,
+      "sha256": "11f8fa0982549a0c4ff8c556c03367d66c053645cd6d1b660015e4764c557389",
+      "verifiedSourceSha256": "d921290661148c82537c9a267c41d789d0d9b553b189cc279951a973d3396c8d",
+      "normalization": "CRLF-to-LF"
+    },
+    {
+      "path": "tests/dori-face.test.mjs",
+      "size": 4772,
+      "sha256": "9b322295e9232f34f0fd492f25e87abfd5ea9096bee8cab5ab5ef07ef7ca3eba",
+      "verifiedSourceSha256": "322d49c6d932897e3ed9304a2bc8bbc09237b7bcaeb9b2065240a2a1cbb77e7b",
+      "normalization": "CRLF-to-LF"
+    },
+    {
+      "path": "tests/dori-preview.test.mjs",
+      "size": 2289,
+      "sha256": "64794eac1268aae38365f0d8ebaa7c568d91623d841eca80dcff209e8a823951",
+      "verifiedSourceSha256": "8c435aa4b7d944c9ecc1614867f629ddffdb1e9a4ed023fc0921b040b40df7ea",
+      "normalization": "CRLF-to-LF"
+    },
+    {
+      "path": "tests/dori.test.mjs",
+      "size": 3118,
+      "sha256": "5214a8ec67b509dae8f703cee5001ed4c7d4cf93bd941e72bddbc06786239e51",
+      "verifiedSourceSha256": "029b5141a6da9a3bae0db914567bd2067a99b0c9c28c10103a9afd08b23cacc5",
+      "normalization": "CRLF-to-LF"
+    },
+    {
+      "path": "tests/ui.test.mjs",
+      "size": 10430,
+      "sha256": "b5d7393e8a41e338e15ab8accf90dd63876e42d5384856aabaae5d3069828ae0",
+      "verifiedSourceSha256": "2fc59bc4b9b18bf51d8a16c658803275b8876ce9ced1fdfcb06f97adaec336d2",
+      "normalization": "CRLF-to-LF"
+    }
+  ],
+  "verifiedSnapshotManifestSha256": "c3373d7813029d3a955cfdaa93cadfe58673c473cfcf31715d2691d2e9ffe98a",
+  "verifiedTestResult": "docs/verification/test-results.json (62 tests passed before export; executable content unchanged)",
+  "exportNormalization": "Git text attributes normalize CRLF to LF; per-file original and export hashes are retained",
+  "exportVerification": {
+    "command": "node --test tests/dori-face.test.mjs tests/dori.test.mjs",
+    "tests": 10,
+    "pass": 10,
+    "fail": 0,
+    "performedAt": "2026-10-09T09:52:19.547Z",
+    "scope": "Affected LF/SVG regression only; original HTTP 8 + legacy 45 + browser 9 retained"
+  }
+}

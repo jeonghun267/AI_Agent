@@ -1,0 +1,131 @@
+ReLo synthetic verification
+UTC 2026-10-09T09:42:36.909Z
+Node v24.15.0
+No real model calls, credentials, customer data or external workflow sends.
+
+syntax: node --check operations/domain.mjs
+
+Exit 0
+
+syntax-ai: node --check operations/ai.mjs
+
+Exit 0
+
+syntax-store: node --check operations/store.mjs
+
+Exit 0
+
+syntax-server: node --check operations/server.mjs
+
+Exit 0
+
+syntax-ui: node --check ops/app.mjs
+
+Exit 0
+
+syntax-legacy: node --check dist/app.mjs
+
+Exit 0
+
+HTTP 8: node --test --test-reporter=spec operations/tests/http.test.mjs
+✔ HTTP: session logout, expiry, role and membership revocation, CSRF and host boundaries (974.6406ms)
+✔ HTTP: tenant manipulation, private direct files and server-side role refusal (404.8741ms)
+✔ HTTP: durable state across relogin/device, conflicts and file retry/deduplication (380.229ms)
+✔ HTTP: receipt transport idempotency differs from cross-user business transaction duplication (357.087ms)
+✔ HTTP: zero settlement and invalid quantities/currency cannot claim recovery (303.4083ms)
+✔ HTTP: immutable draft approval, changed facts require reapproval, manual submission only (362.3741ms)
+✔ HTTP: completed backup restore uses active ledger and preserves reversal plus later deletion (396.9977ms)
+✔ Recovery: isolated new DB imports no credentials, verifies bytes/ledger/permissions and reapplies post-backup deletion (920.1691ms)
+ℹ tests 8
+ℹ suites 0
+ℹ pass 8
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 4192.8414
+
+Exit 0
+
+v4 45: node --test --test-reporter=spec tests/*.test.mjs
+✔ 필수 자료가 없으면 초안 작성과 승인을 차단한다 (3.54ms)
+✔ 데모 문의 틀은 사실만 채우고 미확인 정책과 한국 사용을 밝힌다 (0.3688ms)
+✔ 사용자 검토 전 제출 기록을 차단하고 중복 제출을 방지한다 (0.2751ms)
+✔ 새 자료 요청은 이전 검토를 무효화하고 필수 자료를 다시 점검한다 (0.3808ms)
+✔ 같은 답변의 중복 입력은 상태와 이력을 반복 변경하지 않는다 (0.2105ms)
+✔ 환불 통지는 종료가 아니며 실제 사용자 확인 후에만 종료한다 (0.2271ms)
+✔ 거절·불명확한 답변은 사용자 판단 상태이며 종료할 수 없다 (0.2342ms)
+✔ 교환·AS 안내는 후속 처리이며 수령·수리 확인을 거쳐야 종료한다 (0.2211ms)
+✔ 기한은 날짜와 원문 근거를 함께 저장하고 오래된 답변 기한을 지운다 (0.9888ms)
+✔ Apple 날짜 계산은 직접 구매·사용자 검토·반품에만 적용한다 (0.2237ms)
+✔ 기한 검증 실패는 답변과 상태를 바꾸지 않는다 (0.1686ms)
+✔ 자유 입력의 HTML을 실행 가능한 마크업으로 렌더링하지 않는다 (0.1515ms)
+✔ 사건 데이터는 재로딩되고 손상된 저장 데이터는 거부된다 (0.2958ms)
+✔ 수령일과 필수 정보는 추정하지 않고 잘못된 입력을 거부한다 (0.1714ms)
+✔ Fast completion is honestly ready but remains visible until the 2500ms minimum (1.0037ms)
+✔ Work slower than the minimum stays visible until the actual async result (2.7377ms)
+✔ Cancel during the finished-work display is immediate and old callbacks cannot apply it (0.3022ms)
+✔ Errors and cancellation of pending asynchronous work do not wait or revive the loading state (0.964ms)
+✔ Reduced motion completes without a decorative delay and ready text explains the display (80.4051ms)
+✔ Brand, favicon and touch icon use the Dori face while the current service name stays unchanged (44.9536ms)
+✔ The strap stays below the face and facial features paint above the strap (76.5597ms)
+✔ Animated SVG groups have one explicit viewport transform origin and no nested SVG transform (15.8918ms)
+✔ The document clears both eyes and beak throughout the sorting path and reduced-motion pose (14.1962ms)
+✔ Static art, all preview goals, and loading views share the corrected illustration (118.0022ms)
+▶ Standalone preview uses the same honest display, immediate cancellation and reduced motion
+  ✔ A fast demo result stays visible with completed wording for the minimum interval (2535.0262ms)
+  ✔ Cancellation clears a ready display immediately; reduced motion has no artificial wait (63.035ms)
+✔ Standalone preview uses the same honest display, immediate cancellation and reduced motion (2695.5313ms)
+✔ 준비 반복 요청은 작업 한 번만 실행하고 성공 전에 로딩을 해제한다 (0.9442ms)
+✔ 취소는 예약·이미 큐에 들어간 콜백도 무효화하고 반복 취소를 막는다 (0.1926ms)
+✔ 준비 오류 후 로딩이 남지 않고 다시 시도할 수 있다 (0.2026ms)
+✔ 시작 중 취소되면 새 타이머를 남기지 않는다 (0.1466ms)
+✔ 예약 실패에도 오류 상태를 처리하고 로딩을 정리한다 (0.1509ms)
+✔ 독립 SVG는 유효한 XML이며 실제 캐릭터와 같은 원본을 사용한다 (81.3569ms)
+▶ DOM 통합: 접수 → 자료 확인 → 초안 수정·재검토 → 제출 기록 → 자료 요청 → 환불 통지 → 사용자 확인 종료
+  ✔ 실제 화면 코드의 접수 폼이 사건을 만들고 사용자 문자열을 안전하게 표시 (104.2468ms)
+  ✔ 자료 체크·영문 틀 작성·편집 후 이전 승인이 무효화 (2580.5004ms)
+  ✔ 추가 자료 요청으로 다시 보완하고 중복 답변을 거부 (46.2409ms)
+  ✔ 환불 처리 안내는 미완료이며 최종 확인 체크가 있어야 종료 (38.1445ms)
+  ✔ 키보드 탭 이동과 기한 없는 사건 대기 표시 (16.9755ms)
+✔ DOM 통합: 접수 → 자료 확인 → 초안 수정·재검토 → 제출 기록 → 자료 요청 → 환불 통지 → 사용자 확인 종료 (2918.5282ms)
+▶ 도리 DOM: 미리보기·취소·사건 이동·페이지 이탈·AS·모션 줄이기
+  ✔ 별도 SVG 캐릭터 미리보기와 정지 옵션은 사건을 변경하지 않는다 (15.0355ms)
+  ✔ AS 준비 중 취소하면 타이머·로딩·늦은 상태 변경을 정리 (620.8379ms)
+  ✔ 화면 이동 후 이전 준비 작업이 새 화면이나 사건을 갱신하지 않는다 (573.6748ms)
+  ✔ 키보드 탭 이동과 페이지 이탈도 준비를 취소한다 (34.2806ms)
+  ✔ 모션 줄이기는 정적 도리와 지연 없는 준비 완료로 반영 (16.9983ms)
+✔ 도리 DOM: 미리보기·취소·사건 이동·페이지 이탈·AS·모션 줄이기 (1286.8119ms)
+ℹ tests 45
+ℹ suites 0
+ℹ pass 45
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 9178.1041
+
+Exit 0
+
+Chromium 9: node --test --test-reporter=spec operations/tests/browser.test.mjs
+▶ Local Chromium: complete workflow, responsive UI, cancellation, keyboard and persistence
+  ✔ Login with keyboard, cancel unsaved form, repeated submit saves once (865.5798ms)
+  ✔ Private attachment persists once, exact synthetic extraction shows source and does not mutate (338.6161ms)
+  ✔ Normal Dori minimum 2500ms, rule draft saves only after review and explicit approval (3464.69ms)
+  ✔ Refund notice is not cash; actual proof-backed receipt persists across refresh/relogin/another context (1289.8295ms)
+  ✔ 390/760/800/960/1280 menus, search, state filter and dialogs are visible without document overflow (928.7884ms)
+  ✔ Keyboard tabs/dialog focus, repeated prepare, cancellation ignores late result; reduced motion removes delay (3295.8259ms)
+  ✔ Expired session hides data, offline event cannot reveal it; same-user reauth preserves RAM form and tenant change clears it (702.8804ms)
+  ✔ Preserved v4 intermediate menu and mobile filters remain usable (261.9259ms)
+✔ Local Chromium: complete workflow, responsive UI, cancellation, keyboard and persistence (12356.923ms)
+ℹ tests 9
+ℹ suites 0
+ℹ pass 9
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 12455.1038
+
+Exit 0
+

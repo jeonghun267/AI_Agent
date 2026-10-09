@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#184fe8">
+  <title>도리 미리보기 · 리턴데스크</title>
+  <link rel="icon" href="./dori-favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="./dori-touch-icon.png">
+  <link rel="stylesheet" href="./styles.css">
+  <link rel="stylesheet" href="./dori.css">
+</head>
+<body>
+  <main class="dori-preview-page">
+    <a class="brand" href="./"><span class="brand-mark" aria-hidden="true"><img src="./dori-mark.svg" alt="" width="38" height="38"></span>리턴데스크</a>
+    <div class="dori-preview-heading"><div><h1>크로스백을 멘 펭귄, 도리</h1><p>청록색 가방에서 서류를 꺼내 차곡차곡 정리해요.</p></div><div><label class="field-label" for="preview-goal">문의 종류</label><select id="preview-goal"><option value="return">반품</option><option value="repair">AS</option><option value="exchange">교환</option></select></div></div>
+    <div id="dori-preview-stage"></div>
+    <div class="dori-preview-controls"><button class="btn" id="preview-motion" type="button">움직임 끄기</button><button class="btn primary" id="preview-run" type="button">짧은 준비 동작 체험</button><button class="btn" id="preview-cancel" type="button" disabled>준비 취소</button></div>
+    <p id="preview-status" class="dori-preview-caption" role="status" aria-live="polite">캐릭터 미리보기입니다. 사건 상태 변경·파일 분석·AI 호출·외부 발송은 없습니다.</p>
+    <div class="dori-preview-controls"><a class="btn mini" href="./">사건 관리로 돌아가기</a><a class="btn mini" href="./dori.svg" target="_blank" rel="noopener">도리 SVG 보기</a></div>
+  </main>
+  <script type="module" src="./dori-preview.mjs"></script>
+</body>
+</html>
