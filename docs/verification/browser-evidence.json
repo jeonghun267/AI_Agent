@@ -1,0 +1,39 @@
+{
+  "browser": "154.0.8037.98",
+  "engine": "installed Chrome, headless isolated context",
+  "realDevicesTested": false,
+  "widths": [
+    {
+      "width": 390,
+      "scroll": 390,
+      "client": 390
+    },
+    {
+      "width": 760,
+      "scroll": 760,
+      "client": 760
+    },
+    {
+      "width": 800,
+      "scroll": 800,
+      "client": 800
+    },
+    {
+      "width": 960,
+      "scroll": 960,
+      "client": 960
+    },
+    {
+      "width": 1280,
+      "scroll": 1280,
+      "client": 1280
+    }
+  ],
+  "dori": {
+    "normalMs": 3005,
+    "reducedMs": 363
+  },
+  "jsErrors": [],
+  "externalRequests": [],
+  "finalReceiptCents": 2000
+}

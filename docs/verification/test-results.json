@@ -1,0 +1,91 @@
+{
+  "verifiedAt": "2026-10-09T09:43:03.185Z",
+  "node": "v24.15.0",
+  "results": [
+    {
+      "name": "syntax",
+      "command": [
+        "node",
+        "--check",
+        "operations/domain.mjs"
+      ],
+      "exit": 0
+    },
+    {
+      "name": "syntax-ai",
+      "command": [
+        "node",
+        "--check",
+        "operations/ai.mjs"
+      ],
+      "exit": 0
+    },
+    {
+      "name": "syntax-store",
+      "command": [
+        "node",
+        "--check",
+        "operations/store.mjs"
+      ],
+      "exit": 0
+    },
+    {
+      "name": "syntax-server",
+      "command": [
+        "node",
+        "--check",
+        "operations/server.mjs"
+      ],
+      "exit": 0
+    },
+    {
+      "name": "syntax-ui",
+      "command": [
+        "node",
+        "--check",
+        "ops/app.mjs"
+      ],
+      "exit": 0
+    },
+    {
+      "name": "syntax-legacy",
+      "command": [
+        "node",
+        "--check",
+        "dist/app.mjs"
+      ],
+      "exit": 0
+    },
+    {
+      "name": "HTTP 8",
+      "command": [
+        "node",
+        "--test",
+        "--test-reporter=spec",
+        "operations/tests/http.test.mjs"
+      ],
+      "exit": 0
+    },
+    {
+      "name": "v4 45",
+      "command": [
+        "node",
+        "--test",
+        "--test-reporter=spec",
+        "tests/*.test.mjs"
+      ],
+      "exit": 0
+    },
+    {
+      "name": "Chromium 9",
+      "command": [
+        "node",
+        "--test",
+        "--test-reporter=spec",
+        "operations/tests/browser.test.mjs"
+      ],
+      "exit": 0
+    }
+  ],
+  "passed": true
+}
