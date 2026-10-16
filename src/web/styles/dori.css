@@ -1,0 +1,48 @@
+/* Dori the penguin, shown while an inquiry draft is prepared. */
+.dori-loading { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; min-height: 310px; padding: 18px 20px 24px; text-align: center; background: #f7fbfc; border: 1px solid #e0eeed; border-radius: 12px; overflow: hidden; }
+.dori-work { margin: 0 auto; max-width: 520px; }
+.dori-scene { width: 220px; max-width: 100%; flex: none; line-height: 0; }
+.dori-character { display: block; width: 100%; height: auto; overflow: visible; }
+.dori-label { display: inline-flex; align-items: center; background: #e3f3ef; border: 1px solid #cce8e1; border-radius: 20px; padding: 4px 10px; color: #21776e; font-size: .75rem; font-weight: 650; }
+.dori-loading h3 { font-size: 1.06rem; letter-spacing: -.025em; color: #234f52; line-height: 1.55; margin: 0; overflow-wrap: anywhere; }
+.dori-loading > p { font-size: .875rem; color: #779296; max-width: 350px; line-height: 1.75; margin-bottom: 5px; }
+
+.dori-figure, .dori-wing, .dori-bag-flap, .dori-document { transform-box: view-box; }
+.dori-figure { transform-origin: 112px 197px; }
+.dori-wing { transform-origin: 148px 127px; }
+.dori-bag-flap { transform-origin: 163px 143px; }
+.dori-document { transform-origin: 166px 148px; opacity: 0; }
+.dori-eyes { transform-box: fill-box; transform-origin: center; }
+
+.is-sorting .dori-figure { animation: dori-breathe 1.6s ease-in-out infinite; }
+.is-sorting .dori-document { animation: dori-sort 1.6s ease-in-out infinite; }
+.is-sorting .dori-wing { animation: dori-reach 1.6s ease-in-out infinite; }
+.is-sorting .dori-bag-flap { animation: dori-open-bag 1.6s ease-in-out infinite; }
+.is-sorting .dori-eyes { animation: dori-blink 4s ease-in-out infinite; }
+
+.is-still .dori-document { opacity: 1; transform: translate(23px, -35px) rotate(9deg); }
+.is-still .dori-wing { transform: rotate(-23deg); }
+
+@keyframes dori-breathe { 0%, 100% { transform: translateY(0) rotate(-.7deg); } 50% { transform: translateY(-2px) rotate(.7deg); } }
+@keyframes dori-sort {
+  0%, 8% { opacity: 0; transform: translate(0, 22px) rotate(0); }
+  18% { opacity: 1; transform: translate(0, 0) rotate(-7deg); }
+  40% { opacity: 1; transform: translate(4px, -42px) rotate(-12deg); }
+  64% { opacity: 1; transform: translate(40px, -37px) rotate(12deg); }
+  84% { opacity: 1; transform: translate(42px, 35px) rotate(90deg); }
+  94%, 100% { opacity: 0; transform: translate(42px, 35px) rotate(90deg); }
+}
+@keyframes dori-reach { 0%, 100% { transform: rotate(0); } 22% { transform: rotate(-16deg); } 45% { transform: rotate(-36deg); } 66% { transform: rotate(-53deg); } 87% { transform: rotate(0); } }
+@keyframes dori-open-bag { 0%, 100% { transform: rotate(0); } 16%, 40% { transform: rotate(-12deg); } 60% { transform: rotate(0); } }
+@keyframes dori-blink { 0%, 42%, 46%, 100% { transform: scaleY(1); } 44% { transform: scaleY(.12); } }
+
+@media (max-width: 760px) {
+  .dori-loading { min-height: 290px; padding: 16px 12px 21px; }
+  .dori-scene { width: 190px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .is-sorting .dori-figure, .is-sorting .dori-document, .is-sorting .dori-wing, .is-sorting .dori-bag-flap, .is-sorting .dori-eyes { animation: none !important; }
+  .is-sorting .dori-document { opacity: 1; transform: translate(23px, -35px) rotate(9deg); }
+  .is-sorting .dori-wing { transform: rotate(-23deg); }
+}

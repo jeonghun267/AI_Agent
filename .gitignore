@@ -8,6 +8,8 @@ qa/
 *.tar
 *.tar.gz
 .relo-data/
+.relo-data*/
+test-results/
 .relo-sanity*/
 .relo-test*/
 build/

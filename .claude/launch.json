@@ -1,0 +1,18 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "relo-dev",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["--env-file-if-exists=.env", "src/server/main.mjs"],
+      "port": 4180
+    },
+    {
+      "name": "relo-fake-ai",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["src/server/main.mjs"],
+      "env": {"PORT": "4181", "AI_PROVIDER": "fake", "DATA_DIR": ".relo-data-fake"},
+      "port": 4181
+    }
+  ]
+}

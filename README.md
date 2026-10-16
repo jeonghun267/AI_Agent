@@ -1,69 +1,70 @@
-# ReLo · 해외 공급처 클레임 회수 작업공간
+# ReLo · 해외 직구 클레임 기록
 
-반품·교환·AS의 청구, 합의, 실제 회수와 종료를 구분하는 **로컬 합성 데이터 시제품**입니다. 실제 고객 서비스·AI·발송·은행 연동·배포가 완료된 제품으로 표시하지 않습니다.
+해외 쇼핑몰에서 산 상품의 반품·교환·AS를 **청구 → 판매처 문의 → 답변 → 실제 회수**까지 한 곳에서 기록하는 개인용(B2C) 웹 서비스다.
+
+- **회원가입·로그인**: 각자 자기 클레임만 본다.
+- **판매처·통화**: 판매처는 자유롭게 입력한다. 통화는 USD·EUR·GBP·JPY·CNY·KRW·CAD·AUD를 쓸 수 있다.
+- **세 가지 금액을 따로 기록**: 청구액, 합의액, 실제로 받은 금액. 판매처의 "환불했다" 통지만으로는 입금으로 치지 않는다.
+- **Gemini AI** (사용자가 동의한 경우만):
+  - 영문 문의 초안
+  - 문제 설명 번역
+  - 판매처 답변 번역·분석
+  - 주문서 PDF·이미지에서 주문 정보 읽기
+- **AI 결과는 미리보기다.** 사용자가 확인하고 저장해야 반영된다.
+- **메일은 보내지 않는다.** 앱은 판매처에 메일을 보내지 않는다. 사용자가 복사해서 직접 보내고, "보냈다"는 사실만 기록한다.
 
 ## 실행
 
-Node 24.15.0에서 검증했습니다. 운영 화면은 Node 내장 SQLite를 사용하며 실행에 추가 패키지가 필요하지 않습니다. npm ci는 시험용 JSDOM 설치입니다.
+Node 24.15 이상이 필요하다. 서버 실행에는 추가 패키지가 없다. `npm install`은 브라우저 시험용 `playwright-core`만 설치한다.
 
-```sh
-npm ci
-npm run start:operations
+```bash
+npm install
+npm start
 ```
 
-PC에서 http://127.0.0.1:4180 을 엽니다. loopback에만 바인딩하므로 휴대폰용 원격 주소가 아닙니다. PC 포트를 공개하거나 터널링하지 마세요. 종료 후 사건·파일·원장은 .relo-data/relo.sqlite 에 남습니다. 서버 재시작 시 이전 세션은 폐기되고 다시 로그인합니다.
+http://127.0.0.1:4180 을 연다. 개발 모드에서는 데모 계정(`demo@relo.test` / `Demo-Only-2026!`)이 자동으로 만들어진다.
 
-첫 화면의 합성 사용자 입력 버튼을 선택하고 로그인합니다. a.admin@relo.test(관리자), a.agent@relo.test(담당자), a.viewer@relo.test(열람자), 업체 B는 b.*@relo.test 입니다. **fixture 비밀번호 Synthetic-Only-2026! 는 의도적으로 공개한 가짜 시험용 값**입니다. 실제 사용자/서비스에 재사용하지 마세요. 가입·비밀번호 재설정·MFA는 미연결입니다.
+### AI 켜기
 
-설정은 선택 사항입니다. .env.example 을 참고하되 현재 실행 명령은 .env 를 자동으로 읽지 않습니다. 필요하면 node --env-file=.env operations/server.mjs 를 사용하세요. 실제 API 키 없이 현재 흐름이 동작합니다. RELO_MODE=production 은 승인되지 않은 운영 시작을 차단합니다. .env 와 실제 키는 Git에 넣지 않습니다.
+`.env.example`을 `.env`로 복사하고 `GEMINI_API_KEY`를 넣는다. 키가 없으면 AI 버튼이 숨겨지고 기본 영문 틀로 동작한다. 자세한 내용은 [docs/AI.md](docs/AI.md)를 본다.
 
-보존한 v4는 운영 서버의 /legacy/ 에서 열거나 npm start 로 별도 실행합니다. v4는 브라우저 저장 데모이며 새 서버의 업체별 영속 저장과 구분됩니다.
-
-## 업무 흐름
-
-1. 새 클레임을 등록합니다. 초기 공급처는 Synthetic Supply US, 통화는 USD, 품목은 여러 개입니다.
-2. 주문·불량·회수 증빙을 첨부합니다. 로그인과 업체 권한을 검사한 API로만 다운로드됩니다.
-3. 규칙 기반 영문 문의 틀을 직접 수정하고 버전을 저장합니다. 관리자가 최신 증빙·내용을 검토하고 승인합니다.
-4. 공식 문의 경로에서 사용자가 직접 제출한 사실을 기록합니다. 앱이 메일·문의 메시지를 발송하지 않습니다.
-5. 판매처 답변과 합의액을 기록합니다. 환불 처리 통지만으로 실제 입금을 표시하지 않습니다.
-6. 증빙과 거래 참조를 선택해 입금·교환품 수령·수리 결과를 확인합니다. 부분 회수·정정·분쟁·포기·재개 이력을 유지합니다.
-7. 실제 회수 조건을 충족한 뒤 사유를 남겨 종료합니다. 재로그인/새로고침 후 같은 서버 기록을 확인합니다.
-
-기본 합성 PDF는 정답셋 시험입니다. 정확히 같은 바이트/SHA 문서에만 네 개 필드와 원문을 표시합니다. OCR/LLM 결과가 아닙니다. 일반 문서는 제공자 미연결 오류를 반환합니다. 영문 틀은 실제 번역이 아니며 실제 정책 검색·번역·답변 요약은 미연결입니다. operations/ai.mjs 는 승인 후 연결할 제공자 경계이며 키를 넣어도 현재 실제 API를 호출하지 않습니다.
-
-## 재실행 가능한 시험
-
-```sh
-npm run check
-npm run test:operations
-npm run test:legacy
-npm run test:browser
-npm run verify:all
+```bash
+npm run ai:smoke
 ```
 
-- HTTP 통합: operations/tests/http.test.mjs, 상위 시험 8개.
-- 기존 v4 회귀: tests/*.test.mjs, Node 집계 45개.
-- Chromium 실제 렌더: operations/tests/browser.test.mjs, 상위 1개+시나리오 8개, Node 집계 9개.
-- npm test 는 HTTP와 v4를 실행합니다. verify:all 은 브라우저까지 실행하고 docs/verification/ 에 결과와 종료 코드를 저장합니다.
-- 브라우저 시험은 기존 설치 Playwright와 Chrome이 필요합니다. 사용자 Chrome 프로필과 열린 브라우저를 사용하지 않고 새 headless context를 사용했습니다. 다른 PC는 RELO_PLAYWRIGHT_MODULE(Playwright index.mjs 절대 경로)와 RELO_CHROME_PATH(Chrome 실행 파일 경로)를 지정하세요. 도구가 없으면 명시적으로 실패합니다.
-- 합성 시험 DB는 .relo-test-* 에, 실행 캡처는 qa/operations/ 에 생기며 업로드에서 제외합니다. 검토한 로그는 docs/verification/, 선택 캡처는 docs/screenshots/ 에 제공합니다.
+위 명령은 실제 키로 네 가지 AI 기능을 한 번씩 확인한다.
 
-최신 결과와 단계별 제한은 [G2A_QA.md](G2A_QA.md)를 읽으세요. 390/760/800/960/1280px는 PC Chrome viewport 시험입니다. Android/iPhone 실기기·Safari·실카메라는 미검증입니다.
+## 명령
 
-## 저장·권한·복구
+| 명령 | 내용 |
+|---|---|
+| `npm start` | 서버 실행 (`.env` 자동 적용) |
+| `npm run dev` | `src/` 변경 시 자동 재시작 |
+| `npm test` | 단위 + HTTP 통합 시험 (네트워크 없이 가짜 AI 사용) |
+| `npm run test:browser` | 설치된 Chrome으로 가입부터 회수 기록까지 실제 화면 시험 |
+| `npm run verify` | 문법 검사 → 시험 → 브라우저 시험을 순서대로 |
+| `npm run check` | 모든 `.mjs` 문법 검사 |
+| `npm run ai:smoke` | 실제 Gemini 연결 확인 (API 호출 4회) |
+| `npm run backup` | 운영 DB 백업. `-- --verify`를 붙이면 변경 이력 무결성도 검사 |
 
-업체와 역할 검사를 서버에서 수행합니다. 로그인은 HttpOnly/SameSite=Strict 쿠키, 변경 요청은 Origin/CSRF와 사건 버전 검사를 사용합니다. 생성·첨부·초안·입금은 재시도 키가 있습니다. 거래 참조는 같은 업체에서 사건·사용자·요청 키가 달라도 중복을 거부합니다. 참조가 없는 입금은 대조 확인 두 개와 10자 이상 메모를 요구하고 같은 날짜/금액 재등록을 차단합니다. 여러 사건의 동일 입금 배분은 미지원입니다.
+## 구조
 
-파일은 사설 SQLite BLOB입니다. 원장·초안·감사 이력은 추가 전용입니다. soft delete는 사건 숨김이며 법적 삭제/보존 정책 구현이 아닙니다. 파일 종류 검사/10MB 한도는 악성 코드 검사나 PDF 안전성 인증이 아닙니다.
+서버는 **라우트 → 서비스 → 리포지토리** 계층이고, 화면은 **View → ViewModel → Model**(MVVM)이다. 폴더 지도, 계층 규칙, 새 기능을 추가하는 순서는 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)에 있다.
 
-관리자는 같은 업체 논리 백업을 생성/복원합니다. 이후 원장·정정·이력·늦은 삭제를 보존합니다. 새 빈 DB의 exportRecovery/importRecovery 는 통합 시험에서 확인했습니다. 복구 묶음은 기준 백업과 **현재 DB에서 포착한 후속 원장·이력·삭제 journal**을 포함하고 계정/세션/비밀번호는 내보내지 않습니다. 외부 백업·암호화·지속적 journal 전달·전체 디스크 손실·RPO/RTO는 미검증입니다.
+```
+src/server/   Node HTTP 서버 (domain, repositories, services, routes, ai, http)
+src/web/      화면 (core, models, viewmodels, views, styles)
+tests/        unit, http, browser
+docs/         ARCHITECTURE.md, DESIGN.md(디자인 명세), AI.md, archive/(이전 B2B 시제품 기록)
+```
 
-## 비공개 테스트 웹 선택
+## 상용화 전에 남은 일
 
-현재 Node HTTP + 동기 node:sqlite + 로컬 파일 코드를 기존 정적 Sites에 그대로 업로드하면 동작하지 않습니다. Sites 서버는 Workers fetch(request, env, ctx) 출력과 D1/R2 바인딩이 필요합니다.
+다음은 아직 구현되지 않았다.
 
-가장 작은 Sites 선택은 **새 소유자 비공개 합성 테스트 Site**에 현재 UI를 유지하고 HTTP/DB/첨부/백업 어댑터를 Workers + D1 + 비공개 R2로 옮기는 것입니다. 서버에서 플랫폼 소유자 신원을 확인하고, 원자적 batch·조건부 버전·중복 제약·복구를 다시 검증해야 합니다. 실제 키·실제 고객·외부 발송 없이 새 합성 데이터만 seed합니다. 정적 mock 게시로 서버 구현 완료를 가장하지 않습니다.
-
-대안은 승인된 Node 24 호스트와 영속 디스크에 TLS/소유자 접근 제한을 적용하는 것입니다. 코드 변경은 적지만 계정·비용·백업 책임과 설정이 필요합니다. 현재 원격 인프라를 생성하거나 배포하지 않았고 기존 공개 v4 Site도 변경하지 않았습니다.
-
-실운영 전에는 인증/업체 멤버십, TLS/Secure 쿠키, 저장·암호화·백업·장애 복구, 실제 자료의 처리/위탁/국외 이전/보존·삭제 조건, 권한/보안 검토, 실사용자·실기기 검증이 필요합니다. 발송·판매처 로그인·결제·환불 실행·은행 자동 조회는 별도 승인입니다.
+- 이메일 인증, 비밀번호 재설정 (메일 발송 서비스 연동 필요)
+- 배포: HTTPS 호스트, 영속 디스크, 외부 백업 보관. `APP_ENV=production`과 `APP_ORIGIN=https://…`를 설정해야 한다
+- 이용약관·개인정보처리방침과 국외 이전(Google Gemini) 고지 문구의 법률 검토
+- Gemini 유료 등급 전환 (무료 등급은 입력이 모델 개선에 쓰일 수 있다)
+- 업로드 파일 악성코드 검사, 결제·구독
+- 여러 서버 인스턴스 운영 (로그인 시도 제한이 메모리 기반이라 단일 프로세스 기준이다)
