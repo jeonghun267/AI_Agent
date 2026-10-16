@@ -28,4 +28,38 @@ export function registerAuthRoutes(router, {services, limits}) {
     ctx.clearSession();
     return {body: {ok: true}};
   });
+
+  // Public: the link is often opened in a browser that is not signed in.
+  router.post('/api/auth/verify', async ctx => {
+    if (!limits.links.hit(ctx.ip)) throw tooMany();
+    const {token} = await ctx.json();
+    services.auth.verifyEmail(token);
+    return {body: {ok: true}};
+  }, {auth: false});
+
+  router.post('/api/auth/verify/resend', ctx => {
+    if (!limits.resendVerification.hit(ctx.user.id)) throw tooMany();
+    return {body: services.auth.resendVerification(ctx.user.id)};
+  });
+
+  // Answers the same for every address. The limits count attempts, not
+  // accounts, so a 429 does not reveal anything either.
+  router.post('/api/auth/forgot', async ctx => {
+    const {email} = await ctx.json();
+    const byClient = limits.resetClient.hit(ctx.ip);
+    const byAddress = limits.resetEmail.hit(cleanText(email, 200).toLowerCase());
+    if (!byClient || !byAddress) throw tooMany();
+    services.auth.requestPasswordReset(email);
+    return {body: {ok: true}};
+  }, {auth: false});
+
+  // Ends every session of the account, and this browser's own session too.
+  router.post('/api/auth/reset', async ctx => {
+    if (!limits.links.hit(ctx.ip)) throw tooMany();
+    const {token, password} = await ctx.json();
+    await services.auth.resetPassword(token, password);
+    services.auth.logout(ctx.sessionToken);
+    ctx.clearSession();
+    return {body: {ok: true}};
+  }, {auth: false});
 }

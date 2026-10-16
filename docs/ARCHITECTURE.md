@@ -28,6 +28,7 @@ View ──(사용자 행동)──▶ ViewModel ──▶ Model ──fetch─�
 | `routes/` | HTTP ↔ 서비스 변환 | 요청 읽기와 응답 형태만. 리포지토리 import 금지 |
 | `http/` | 라우터, 요청·응답 도우미, 보안 헤더·Host·Origin·CSRF, 정적 파일, 시도 제한 | |
 | `ai/` | Gemini·가짜·비활성 provider, `prompts/`(프롬프트 + 응답 스키마 + 응답 검증) | AI는 미리보기만 만들고 저장하지 않는다 |
+| `mail/` | 계정 메일 provider 경계(`provider.mjs` 계약), `resend`(Resend REST API, SDK 없음), `console`(개발·시험: 서버 로그에 출력), `disabled`, `messages.mjs`(메일 본문) | 서비스는 발송을 기다리지 않는다. API 키는 `.env`에만 |
 | `dev/` | 개발용 데모 계정 seed, 합성 주문서 PDF | 운영에서 seed 금지 |
 
 ### 화면 `src/web/` (빌드 도구 없는 ES 모듈)
@@ -80,6 +81,16 @@ View ──(사용자 행동)──▶ ViewModel ──▶ Model ──fetch─�
   - 새 검증을 추가할 때 입력칸이 정해져 있으면 꼭 `forField`를 쓴다.
 - 화면의 느린 요청(AI)은 `AbortController`로 취소할 수 있다. 취소는 `ApiError` code `cancelled`로 온다.
 
+## 계정과 메일
+
+- **일회용 링크**(`email_tokens`): 용도는 `verify`(24시간)와 `reset`(30분). 토큰은 SHA-256 해시만 저장한다. 쓰면 그 행을 지우고(`DELETE … RETURNING`이라 두 요청이 같은 링크를 동시에 써도 한 번만 통과), 같은 용도의 새 링크를 만들면 예전 링크를 지운다. 만료·사용됨·없음·용도 다름은 모두 같은 400(`invalid_link`)이다.
+- **링크 주소**: `APP_ORIGIN/#/verify/<토큰>`, `APP_ORIGIN/#/reset/<토큰>`. 쿼리 문자열이 아니라 해시 경로라 서버 로그·Referer에 남지 않고, 화면은 쓴 링크를 `history.replaceState`로 지운다.
+- **가입**: 바로 로그인되고 인증 메일이 나간다. 인증 전에는 화면 맨 위에 안내 띠와 '인증 메일 다시 받기'(계정당 시간당 3회)가 보인다. 인증하지 않아도 기능은 막지 않는다.
+- **비밀번호 재설정 요청**(`POST /api/auth/forgot`): 계정이 있든 없든 같은 응답이다. 시도 제한도 계정이 아니라 요청 수(주소당 시간당 3회, 클라이언트당 10회)로 센다. 계정이 있을 때의 쓰기와 발송은 응답을 보낸 뒤에 해서 응답 시간 차이도 줄인다.
+- **비밀번호 재설정**(`POST /api/auth/reset`): 새 비밀번호를 먼저 검증하고(틀리면 링크를 쓰지 않음), 한 트랜잭션에서 비밀번호 변경 → 그 사용자 세션 전부 삭제 → 이메일 인증 처리(링크가 메일함 소유를 증명) → 남은 재설정 링크 삭제. 요청한 브라우저의 쿠키도 지운다.
+- **가입 409**: 가입 즉시 로그인되는 흐름이라 이미 가입한 이메일은 409로 알릴 수밖에 없다. IP당 가입 시도 제한(시간당 10회)으로 대량 수집만 늦춘다. 완전히 숨기려면 '메일 링크를 연 뒤 계정 생성' 흐름이 필요하다(README '상용화 전에 남은 일').
+- **provider**: `RESEND_API_KEY`가 있으면 `resend`가 기본이다. `POST https://api.resend.com/emails`에 `User-Agent`(없으면 403)와 `Idempotency-Key`를 붙여 보내고, 네트워크 오류·시간 초과·429·5xx면 같은 키로 한 번만 다시 보낸다(두 번 배달되지 않음). 실패는 `mail_*` 코드와 Resend 오류 이름만 로그에 남긴다. 키가 없으면 개발·시험은 `console`(링크를 서버 로그에 출력), 운영은 `disabled`가 되어 `/api/config`의 `mail.enabled`가 false다. 화면은 이 값으로 '비밀번호를 잊었어요' 링크와 인증 띠를 숨긴다. 운영의 `resend`는 `MAIL_FROM`(인증된 도메인)이 있어야 시작한다.
+
 ## 새 기능 추가 체크리스트
 
 ### 클레임에 새 입력칸
@@ -113,8 +124,10 @@ View ──(사용자 행동)──▶ ViewModel ──▶ Model ──fetch─�
 
 | 위치 | 내용 |
 |---|---|
-| `tests/unit/` | domain 규칙, DB(트리거·탈퇴 삭제), Gemini provider(가짜 fetch), 화면 순수 로직, 계층 규칙 |
-| `tests/http/` | 실제 서버를 임시 DB로 띄워서 보는 API 시험: 가입·세션·CSRF·Host, 사용자 간 격리, 버전 충돌, 재시도 키, 회수 중복, AI 동의·한도·출력 검증, 내보내기·탈퇴 |
-| `tests/browser/` | 설치된 Chrome headless로 가입부터 회수 기록까지 진행. 모바일 폭, 외부 요청 0, 스크립트 오류 0 확인 |
+| `tests/unit/` | domain 규칙, DB(트리거·탈퇴 삭제), Gemini·Resend provider(가짜 fetch), 화면 순수 로직, 계층 규칙 |
+| `tests/http/` | 실제 서버를 임시 DB로 띄워서 보는 API 시험: 가입·세션·CSRF·Host, 이메일 인증·비밀번호 재설정(만료, 재사용 거부, 세션 무효화, 계정 유무 비노출), 사용자 간 격리, 버전 충돌, 재시도 키, 회수 중복, AI 동의·한도·출력 검증, 내보내기·탈퇴 |
+| `tests/browser/` | 설치된 Chrome headless로 가입부터 회수 기록까지, 그리고 인증 링크 → 비밀번호 재설정 → 새 비밀번호 로그인까지 진행. 모바일 폭, 외부 요청 0, 스크립트 오류 0 확인 |
+
+HTTP·브라우저 시험은 메일을 보내지 않고 `tests/helpers/app.mjs`의 `createOutbox()`에 모아 링크를 꺼내 쓴다.
 
 `npm run verify`가 이 셋을 순서대로 실행한다.

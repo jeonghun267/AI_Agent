@@ -1,6 +1,6 @@
 import {html, toMarkup} from '../core/html.mjs';
 import {renderInto, trapFocus, formValues, focusables} from '../core/dom.mjs';
-import {parseHash, routeHash} from '../core/hash-router.mjs';
+import {parseHash, routeHash, isLinkHash} from '../core/hash-router.mjs';
 import * as shell from './shell.view.mjs';
 import * as auth from './pages/auth.view.mjs';
 import * as dashboard from './pages/dashboard.view.mjs';
@@ -21,6 +21,14 @@ const PAGES = {
   trash: trash.renderTrash,
   settings: settings.renderSettings,
   claim: claimDetail.renderClaimDetail,
+};
+
+// Route name -> signed-out screen (a centred card, no shell). Unknown names show login.
+const AUTH_PAGES = {
+  login: auth.renderLogin,
+  signup: auth.renderSignup,
+  forgot: auth.renderForgot,
+  reset: auth.renderReset,
 };
 
 // Dialog type -> renderer returning {title, body}. Opened via vms.app.openDialog(type, props).
@@ -133,7 +141,7 @@ export function mountApp({root, modal, overlay, toast}, vms) {
   function render() {
     const s = snapshot();
     if (s.session.status === 'loading') renderInto(root, html`<div class="boot" role="status">불러오는 중…</div>`);
-    else if (s.session.status !== 'signedIn') renderInto(root, s.app.route.name === 'signup' ? auth.renderSignup(s) : auth.renderLogin(s));
+    else if (s.session.status !== 'signedIn' || s.app.route.name === 'reset') renderInto(root, (AUTH_PAGES[s.app.route.name] ?? auth.renderLogin)(s));
     else renderInto(root, shell.renderShell(s, PAGES[s.app.route.name]?.(s) ?? ''));
 
     // Fade new content in only when the route (page or tab) changes, never on
@@ -148,7 +156,8 @@ export function mountApp({root, modal, overlay, toast}, vms) {
     }
 
     if (s.session.status !== 'loading' && location.hash !== hash) {
-      const redirect = ['login', 'signup'].includes(s.app.route.name);
+      // A one-time link is replaced, not kept in history, once it has been used.
+      const redirect = ['login', 'signup'].includes(s.app.route.name) || isLinkHash(location.hash);
       history[redirect ? 'replaceState' : 'pushState'](null, '', hash);
     }
 

@@ -3,6 +3,9 @@ import {resolve} from 'node:path';
 const ROOT = resolve(import.meta.dirname, '..', '..');
 const ENVIRONMENTS = ['development', 'test', 'production'];
 const AI_PROVIDERS = ['gemini', 'disabled', 'fake'];
+const MAIL_PROVIDERS = ['resend', 'console', 'disabled'];
+// Resend's shared test sender: it delivers only to your own Resend account address.
+const RESEND_TEST_SENDER = 'ReLo <onboarding@resend.dev>';
 // Google's recommended cost-efficient model for new projects (checked 2026-10).
 // Set GEMINI_MODEL=gemini-3.8-flash for higher quality at higher cost.
 export const DEFAULT_GEMINI_MODEL = 'gemini-3.5-flash-lite';
@@ -15,7 +18,7 @@ function integer(value, fallback, name) {
 }
 
 // Reads every setting once at startup. Pass an object instead of process.env
-// in tests. The returned object holds the API key: never log or serialize it.
+// in tests. The returned object holds the API keys: never log or serialize it.
 export function loadConfig(env = process.env) {
   const appEnv = env.APP_ENV || 'development';
   if (!ENVIRONMENTS.includes(appEnv)) throw new Error(`APP_ENV must be one of: ${ENVIRONMENTS.join(', ')}.`);
@@ -31,6 +34,14 @@ export function loadConfig(env = process.env) {
   if (provider === 'fake' && isProduction) throw new Error('AI_PROVIDER=fake is for tests only.');
   if (provider === 'gemini' && !apiKey) throw new Error('AI_PROVIDER=gemini needs GEMINI_API_KEY.');
 
+  const resendKey = (env.RESEND_API_KEY || '').trim();
+  const mailProvider = env.MAIL_PROVIDER || (resendKey ? 'resend' : isProduction ? 'disabled' : 'console');
+  if (!MAIL_PROVIDERS.includes(mailProvider)) throw new Error(`MAIL_PROVIDER must be one of: ${MAIL_PROVIDERS.join(', ')}.`);
+  if (mailProvider === 'console' && isProduction) throw new Error('MAIL_PROVIDER=console prints one-time links to the log; it is for development and tests only.');
+  if (mailProvider === 'resend' && !resendKey) throw new Error('MAIL_PROVIDER=resend needs RESEND_API_KEY.');
+  const mailFrom = (env.MAIL_FROM || '').trim() || (isProduction ? '' : RESEND_TEST_SENDER);
+  if (mailProvider === 'resend' && !mailFrom) throw new Error('MAIL_FROM is required in production, e.g. "ReLo <no-reply@your-domain>" on a domain verified in Resend.');
+
   return Object.freeze({
     root: ROOT,
     webRoot: resolve(ROOT, 'src', 'web'),
@@ -42,6 +53,14 @@ export function loadConfig(env = process.env) {
     dataDir: resolve(ROOT, env.DATA_DIR || '.relo-data'),
     seedDemo: env.SEED_DEMO ? env.SEED_DEMO === '1' : appEnv === 'development',
     sessionTtlSeconds: integer(env.SESSION_TTL_SECONDS, 7 * 24 * 60 * 60, 'SESSION_TTL_SECONDS'),
+    verifyTokenTtlSeconds: integer(env.EMAIL_VERIFY_TTL_SECONDS, 24 * 60 * 60, 'EMAIL_VERIFY_TTL_SECONDS'),
+    resetTokenTtlSeconds: integer(env.PASSWORD_RESET_TTL_SECONDS, 30 * 60, 'PASSWORD_RESET_TTL_SECONDS'),
+    mail: Object.freeze({
+      provider: mailProvider,
+      apiKey: resendKey,
+      from: mailFrom,
+      timeoutMs: integer(env.MAIL_TIMEOUT_MS, 10000, 'MAIL_TIMEOUT_MS'),
+    }),
     ai: Object.freeze({
       provider,
       apiKey,

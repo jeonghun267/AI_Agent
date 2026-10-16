@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {readdirSync} from 'node:fs';
 import {mkdtemp, rm} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
@@ -31,7 +32,8 @@ test('migrations run once and reopening keeps data', async t => {
   first.close();
   const reopened = openDatabase(dir);
   try {
-    assert.equal(reopened.prepare('SELECT COUNT(*) AS n FROM schema_migrations').get().n, 1);
+    const migrations = readdirSync(join(import.meta.dirname, '../../src/server/repositories/migrations')).filter(name => name.endsWith('.sql'));
+    assert.equal(reopened.prepare('SELECT COUNT(*) AS n FROM schema_migrations').get().n, migrations.length);
     assert.equal(reopened.prepare('SELECT COUNT(*) AS n FROM claims').get().n, 1);
   } finally {
     reopened.close();

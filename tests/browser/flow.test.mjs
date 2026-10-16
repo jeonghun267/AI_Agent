@@ -15,12 +15,24 @@ const CHROME = [
   '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
   '/usr/bin/google-chrome',
 ].find(path => path && existsSync(path));
+const NO_CHROME = !CHROME && 'Chrome not found (set RELO_CHROME_PATH)';
 
-test('sign up, record a claim with AI help and a receipt, then use it on a phone', {skip: !CHROME && 'Chrome not found (set RELO_CHROME_PATH)'}, async t => {
-  const {base} = await startApp(t);
+// Desktop page in a fresh profile. Collects script errors; the signed-out
+// /api/me check and wrong-password attempts are expected 401s.
+async function openPage(t) {
   const browser = await chromium.launch({executablePath: CHROME, headless: true});
   t.after(() => browser.close());
   const context = await browser.newContext({viewport: {width: 1280, height: 860}, locale: 'ko-KR', timezoneId: 'Asia/Seoul'});
+  const page = await context.newPage();
+  const errors = [];
+  page.on('pageerror', error => errors.push(error.message));
+  page.on('console', message => { if (message.type() === 'error' && !message.text().includes('401')) errors.push(message.text()); });
+  return {context, page, errors};
+}
+
+test('sign up, record a claim with AI help and a receipt, then use it on a phone', {skip: NO_CHROME}, async t => {
+  const {base} = await startApp(t);
+  const {context, page, errors} = await openPage(t);
 
   const external = [];
   await context.route('**/*', route => {
@@ -28,11 +40,6 @@ test('sign up, record a claim with AI help and a receipt, then use it on a phone
     if (hostname !== '127.0.0.1') { external.push(href); return route.abort(); }
     return route.continue();
   });
-  const page = await context.newPage();
-  const errors = [];
-  page.on('pageerror', error => errors.push(error.message));
-  // The signed-out /api/me check on first load is an expected 401.
-  page.on('console', message => { if (message.type() === 'error' && !message.text().includes('401')) errors.push(message.text()); });
   const pill = () => page.locator('.detail-title .pill').textContent();
 
   // Sign up and land on the empty dashboard.
@@ -175,4 +182,68 @@ test('errors appear under the input, unsaved input is protected, slow AI shows p
   await page.waitForFunction(() => !document.querySelector('#modal').open);
   assert.equal(app.db.prepare('SELECT COUNT(*) AS n FROM claims').get().n, 0);
   assert.deepEqual(errors, []);
+});
+
+test('confirm the address from the emailed link, then reset a forgotten password', {skip: NO_CHROME}, async t => {
+  const {base, mail} = await startApp(t);
+  const {page, errors} = await openPage(t);
+  const email = 'reset-flow@example.test';
+  const newPassword = 'Brand-New-Pass-2026';
+  const band = page.locator('.verify-band');
+  const hash = () => page.evaluate(() => location.hash);
+
+  // A new account is signed in, with a band asking to confirm the address.
+  await page.goto(`${base}/#/signup`);
+  await page.fill('#field-email', email);
+  await page.fill('#field-password', PASSWORD);
+  await page.fill('#field-passwordConfirm', PASSWORD);
+  await page.click('#signup-form [type="submit"]');
+  await band.waitFor();
+  await band.getByRole('button', {name: '인증 메일 다시 받기'}).click();
+  await page.locator('#toast.show').filter({hasText: '인증 메일을 다시 보냈어요'}).waitFor();
+  assert.equal(mail.count(email, 'verify'), 2);
+  await page.setViewportSize({width: 375, height: 812});
+  assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true, 'the band fits a phone');
+  await page.setViewportSize({width: 1280, height: 860});
+
+  // The emailed link confirms it; the token does not stay in the address bar.
+  await page.goto(`${base}/#/verify/${mail.token(email, 'verify')}`);
+  await page.locator('#toast.show').filter({hasText: '이메일 인증을 마쳤어요'}).waitFor();
+  await band.waitFor({state: 'detached'});
+  assert.equal(await hash(), '#/');
+
+  // Forgotten password: sign out, ask for a link, choose a new password.
+  await page.click('[data-action="logout"]');
+  await page.getByRole('link', {name: '비밀번호를 잊었어요'}).click();
+  await page.fill('#field-email', email);
+  await page.click('#forgot-form [type="submit"]');
+  await page.getByRole('heading', {name: '메일함을 확인하세요'}).waitFor();
+  await page.goto(`${base}/#/reset/${mail.token(email, 'reset')}`);
+  await page.getByRole('heading', {name: '새 비밀번호 정하기'}).waitFor();
+  await page.fill('#field-password', newPassword);
+  await page.fill('#field-passwordConfirm', newPassword);
+  await page.click('#reset-form [type="submit"]');
+  await page.locator('#toast.show').filter({hasText: '비밀번호를 바꿨어요'}).waitFor();
+  await page.locator('#login-form').waitFor();
+  assert.equal(await hash(), '#/login', 'the used link is replaced in history');
+
+  // The old password stops working; the new one signs in.
+  await page.fill('#field-email', email);
+  await page.fill('#field-password', PASSWORD);
+  await page.click('#login-form [type="submit"]');
+  await page.locator('#login-form .error').filter({hasText: '이메일 또는 비밀번호'}).waitFor();
+  await page.fill('#field-password', newPassword);
+  await page.click('#login-form [type="submit"]');
+  await page.getByRole('heading', {name: '아직 등록한 클레임이 없어요'}).waitFor();
+  assert.equal(await band.count(), 0);
+
+  // Opening the same reset link again is refused with a way forward.
+  await page.click('[data-action="logout"]');
+  await page.locator('#login-form').waitFor();
+  await page.goto(`${base}/#/reset/${mail.token(email, 'reset')}`);
+  await page.fill('#field-password', 'Another-Pass-2026');
+  await page.fill('#field-passwordConfirm', 'Another-Pass-2026');
+  await page.click('#reset-form [type="submit"]');
+  await page.locator('#reset-form .error').filter({hasText: '만료됐거나 이미 사용됐어요'}).waitFor();
+  assert.deepEqual(errors.filter(text => !text.includes('400')), [], 'no script errors');
 });
