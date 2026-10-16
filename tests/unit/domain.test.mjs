@@ -5,6 +5,7 @@ import {parseMoney, toDecimal} from '../../src/server/domain/money.mjs';
 import {parseClaimInput, totals, isRecovered, nextStateForTransition, stateAfterReceipt} from '../../src/server/domain/claim.mjs';
 import {parseReceipt} from '../../src/server/domain/receipt.mjs';
 import {templateDraft} from '../../src/server/domain/draft-template.mjs';
+import {parsePastDate} from '../../src/server/domain/validation.mjs';
 
 const rejects = (fn, code = 'validation') => assert.throws(fn, error => error instanceof AppError && error.code === code);
 
@@ -40,6 +41,12 @@ test('claim input: vendor, currency and amounts are validated', () => {
   rejects(() => parseClaimInput(claimInput({items: [{name: 'x', orderedQty: 1, claimQty: 2, unitPrice: '1'}]})));
   rejects(() => parseClaimInput(claimInput({deadline: '2026-11-01'})));
   rejects(() => parseClaimInput(claimInput({vendorUrl: 'javascript:alert(1)'})));
+});
+
+test('dates: "today" in a time zone ahead of UTC is not treated as the future', () => {
+  const day = offsetHours => new Date(Date.now() + offsetHours * 3600 * 1000).toISOString().slice(0, 10);
+  assert.equal(parsePastDate(day(9)), day(9), 'Korea (UTC+9) today');
+  rejects(() => parsePastDate(day(48)));
 });
 
 test('totals: reversals undo entries and recovery depends on claim kind', () => {

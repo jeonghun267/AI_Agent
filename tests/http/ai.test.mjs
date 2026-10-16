@@ -61,7 +61,8 @@ test('draft, translation, reply analysis and extraction return previews without 
   const extraction = await user.call(`/api/claims/${claim.id}/ai/extract`, {method: 'POST', data: {fileId: claim.files[0].id}});
   assert.equal(extraction.status, 200);
   assert.equal(extraction.data.suggestion.currency, 'EUR');
-  assert.equal(extraction.data.suggestion.claimedAmount, '79.80');
+  assert.equal(extraction.data.orderTotal, '79.80');
+  assert.equal(extraction.data.suggestion.claimedAmount, undefined, 'the order total never fills the claim amount');
   assert.equal(extraction.data.suggestion.items[0].orderedQty, 2);
   assert.equal(aiProvider.calls.at(-1).parts[0].file.mime, 'application/pdf');
 

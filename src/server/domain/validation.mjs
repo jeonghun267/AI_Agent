@@ -1,5 +1,4 @@
 import {reject} from './errors.mjs';
-import {todayIso} from './primitives.mjs';
 
 export function cleanText(value, max = 1000) {
   return String(value ?? '').trim().slice(0, max);
@@ -20,9 +19,12 @@ export function parseDate(value, message = '날짜를 YYYY-MM-DD 형식으로 �
   return text;
 }
 
+// Users pick dates in their own time zone, which can be up to 14 hours ahead
+// of UTC (Korea is +9), so "today" for them may already be tomorrow in UTC.
 export function parsePastDate(value) {
   const date = parseDate(value);
-  reject(date > todayIso(), '주문일·확인일은 미래 날짜일 수 없습니다.');
+  const latestToday = new Date(Date.now() + 14 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  reject(date > latestToday, '주문일·확인일은 미래 날짜일 수 없습니다.');
   return date;
 }
 

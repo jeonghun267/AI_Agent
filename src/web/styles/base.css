@@ -1,0 +1,93 @@
+/* Design tokens, reset, typography and page layout. Components live in components.css. */
+:root {
+  --ink: #173f42;
+  --text: #223c45;
+  --muted: #728487;
+  --line: #dce5e3;
+  --surface: #ffffff;
+  --background: #f3f6f5;
+  --green: #246a61;
+  --green-soft: #eaf3ef;
+  --positive: #2d846a;
+  --danger: #a74045;
+  --warning-bg: #fff7e9;
+  --warning-ink: #8b6e37;
+  --ai-bg: #f4f0fa;
+  --ai-ink: #6f5a86;
+  --shadow: 0 12px 50px #153d4210;
+  font-family: Inter, 'Segoe UI', 'Malgun Gothic', sans-serif;
+  font-size: 15px;
+  color: var(--text);
+  background: var(--background);
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--background); }
+button, input, textarea, select { font: inherit; }
+button, a, input, select, textarea { outline-offset: 3px; }
+a { color: var(--green); }
+button { cursor: pointer; }
+button:disabled { cursor: default; opacity: .5; }
+h1, h2, h3, p { margin: 0; }
+h1 { font-size: 1.85rem; letter-spacing: -.045em; }
+h2 { font-size: 1.16rem; letter-spacing: -.025em; }
+h3 { font-size: 1rem; margin-top: 18px; margin-bottom: 6px; }
+p { line-height: 1.7; }
+small, .muted { color: var(--muted); }
+small { font-size: .8rem; }
+pre { margin: 0; }
+.prewrap { white-space: pre-wrap; overflow-wrap: anywhere; }
+.spaced { margin-top: 18px; }
+.plain-list { margin: 10px 0; padding-left: 20px; line-height: 1.8; font-size: .88rem; }
+
+.skip { position: absolute; top: -90px; left: 0; background: white; padding: 12px; z-index: 80; }
+.skip:focus { top: 0; }
+.boot { padding: 30vh 16px; text-align: center; color: var(--muted); }
+.offline { background: #fff1db; color: #937036; padding: 10px 16px; text-align: center; font-size: .85rem; }
+
+/* Signed-in frame */
+.shell { max-width: 1440px; margin: auto; }
+.topbar { padding: 20px 36px; background: var(--surface); border-bottom: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; gap: 15px; }
+.brand { display: flex; align-items: center; gap: 10px; font-size: 1.5rem; letter-spacing: -.06em; font-weight: 800; color: var(--ink); text-decoration: none; }
+.brand img { width: 42px; height: 42px; }
+.user-info { display: flex; align-items: center; gap: 10px; font-size: .85rem; }
+.nav { padding: 0 36px; display: flex; align-items: center; gap: 28px; border-bottom: 1px solid var(--line); background: var(--surface); overflow-x: auto; }
+.nav a { white-space: nowrap; color: #6c7f80; font-size: .92rem; padding: 16px 0; min-height: 52px; display: inline-flex; align-items: center; border-bottom: 3px solid transparent; text-decoration: none; }
+.nav a.active { color: var(--green); font-weight: 750; border-bottom-color: var(--green); }
+.workspace { padding: 30px 36px 60px; }
+.footer { padding: 0 36px 30px; color: #8a9a93; font-size: .76rem; }
+.heading { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-bottom: 22px; }
+.heading p { font-size: .9rem; color: var(--muted); margin-top: 6px; }
+
+/* Sign-in pages */
+.auth-page { max-width: 465px; margin: 8vh auto; padding: 32px; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--shadow); }
+.auth-page .brand { margin-bottom: 28px; }
+.auth-page h1 { font-size: 1.5rem; margin-bottom: 8px; }
+.auth-page .lead { font-size: .88rem; color: var(--muted); margin-bottom: 24px; }
+.auth-switch { margin-top: 18px; font-size: .88rem; text-align: center; }
+.dev-hint { margin-top: 20px; border-top: 1px solid var(--line); padding-top: 17px; font-size: .82rem; color: #6f8079; }
+.dev-hint p { margin: 4px 0 10px; font-family: ui-monospace, Consolas, monospace; }
+
+@media (max-width: 1100px) {
+  .workspace { padding: 25px; }
+  .topbar, .nav, .footer { padding-left: 25px; padding-right: 25px; }
+}
+
+@media (max-width: 760px) {
+  .topbar { padding: 14px 16px; }
+  .brand { font-size: 1.3rem; }
+  .brand img { width: 35px; height: 35px; }
+  .user-info .user-name { display: none; }
+  .nav { padding: 0 16px; gap: 22px; }
+  .nav a { font-size: .85rem; min-height: 48px; }
+  .workspace { padding: 22px 16px 45px; }
+  .footer { padding: 0 16px 24px; }
+  .heading { gap: 12px; align-items: flex-start; }
+  .heading > .btn { white-space: nowrap; }
+  h1 { font-size: 1.5rem; }
+  .auth-page { margin: 5vh 16px; padding: 24px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { scroll-behavior: auto !important; transition: none !important; animation: none !important; }
+}

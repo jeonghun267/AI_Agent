@@ -61,6 +61,8 @@ const tryOr = (fn, fallback) => { try { return fn(); } catch { return fallback; 
 
 // Returns values shaped like the claim form input, so the web app can prefill
 // the edit form. Anything that does not parse is dropped, not guessed.
+// The order total is shown for reference only: what the user claims may be
+// less than the whole order, so it never fills the claim amount.
 export function parseExtraction(data) {
   if (!data || !Array.isArray(data.items) || !Array.isArray(data.fields)) throw badOutput();
   const currency = Object.hasOwn(CURRENCIES, data.currency) ? data.currency : null;
@@ -77,9 +79,9 @@ export function parseExtraction(data) {
       orderRef: optionalString(data.orderRef, 100),
       orderedOn: tryOr(() => data.orderedOn ? parseDate(data.orderedOn) : null, null),
       currency,
-      claimedAmount: money(data.total),
       items,
     },
+    orderTotal: money(data.total),
     fields: data.fields.slice(0, 40)
       .filter(field => FIELD_NAMES.includes(field?.field))
       .map(field => ({field: field.field, value: optionalString(field.value, 300) ?? '', quote: optionalString(field.quote, 300) ?? ''})),
