@@ -1,0 +1,51 @@
+import {resolve} from 'node:path';
+
+const ROOT = resolve(import.meta.dirname, '..', '..');
+const ENVIRONMENTS = ['development', 'test', 'production'];
+const AI_PROVIDERS = ['gemini', 'disabled', 'fake'];
+export const DEFAULT_GEMINI_MODEL = 'gemini-2.5-flash';
+
+function integer(value, fallback, name) {
+  if (value === undefined || value === '') return fallback;
+  const number = Number(value);
+  if (!Number.isInteger(number) || number < 0) throw new Error(`${name} must be a non-negative integer.`);
+  return number;
+}
+
+// Reads every setting once at startup. Pass an object instead of process.env
+// in tests. The returned object holds the API key: never log or serialize it.
+export function loadConfig(env = process.env) {
+  const appEnv = env.APP_ENV || 'development';
+  if (!ENVIRONMENTS.includes(appEnv)) throw new Error(`APP_ENV must be one of: ${ENVIRONMENTS.join(', ')}.`);
+  const isProduction = appEnv === 'production';
+
+  const port = integer(env.PORT, 4180, 'PORT');
+  const appOrigin = (env.APP_ORIGIN || `http://127.0.0.1:${port}`).replace(/\/+$/, '');
+  if (isProduction && !appOrigin.startsWith('https://')) throw new Error('APP_ORIGIN must be an https:// origin in production.');
+
+  const apiKey = (env.GEMINI_API_KEY || '').trim();
+  const provider = env.AI_PROVIDER || (apiKey ? 'gemini' : 'disabled');
+  if (!AI_PROVIDERS.includes(provider)) throw new Error(`AI_PROVIDER must be one of: ${AI_PROVIDERS.join(', ')}.`);
+  if (provider === 'fake' && isProduction) throw new Error('AI_PROVIDER=fake is for tests only.');
+  if (provider === 'gemini' && !apiKey) throw new Error('AI_PROVIDER=gemini needs GEMINI_API_KEY.');
+
+  return Object.freeze({
+    root: ROOT,
+    webRoot: resolve(ROOT, 'src', 'web'),
+    appEnv,
+    isProduction,
+    host: env.HOST || '127.0.0.1',
+    port,
+    appOrigin,
+    dataDir: resolve(ROOT, env.DATA_DIR || '.relo-data'),
+    seedDemo: env.SEED_DEMO ? env.SEED_DEMO === '1' : appEnv === 'development',
+    sessionDays: integer(env.SESSION_DAYS, 7, 'SESSION_DAYS'),
+    ai: Object.freeze({
+      provider,
+      apiKey,
+      model: env.GEMINI_MODEL || DEFAULT_GEMINI_MODEL,
+      hourlyLimit: integer(env.AI_HOURLY_LIMIT, 30, 'AI_HOURLY_LIMIT'),
+      timeoutMs: integer(env.AI_TIMEOUT_MS, 30000, 'AI_TIMEOUT_MS'),
+    }),
+  });
+}
