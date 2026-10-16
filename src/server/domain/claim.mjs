@@ -1,4 +1,4 @@
-import {reject} from './errors.mjs';
+import {reject, forField} from './errors.mjs';
 import {cleanText, requireText, parseDate, parsePastDate, parseOptionalUrl, parseInteger} from './validation.mjs';
 import {parseCurrency, parseMoney} from './money.mjs';
 import {sha256} from './primitives.mjs';
@@ -35,29 +35,44 @@ export const DEADLINE_ZONES = Object.freeze([
 const MAX_ITEMS = 30;
 
 // Validates the user-editable facts of a claim. Returns the stored payload.
+// Fields are checked in form order so the first error matches the first wrong input.
+// Each error carries the input name (forField) for inline display.
 export function parseClaimInput(input = {}) {
-  const currency = parseCurrency(input.currency);
-  reject(!Object.hasOwn(CLAIM_KINDS, input.kind), '반품·환불, 교환, AS 중 하나를 선택하세요.');
+  const title = forField('title', () => requireText(input.title, 150, '상품명을 입력하세요.'));
+  const vendor = forField('vendor', () => requireText(input.vendor, 100, '판매처를 입력하세요.'));
+  const orderRef = forField('orderRef', () => requireText(input.orderRef, 100, '주문번호를 입력하세요.'));
+  const orderedOn = forField('orderedOn', () => parsePastDate(input.orderedOn));
+  forField('kind', () => reject(!Object.hasOwn(CLAIM_KINDS, input.kind), '반품·환불, 교환, AS 중 하나를 선택하세요.'));
+  const currency = forField('currency', () => parseCurrency(input.currency));
+  const claimed = forField('claimedAmount', () => {
+    const amount = parseMoney(input.claimedAmount, currency);
+    reject(amount === 0, '청구액은 0보다 커야 합니다.');
+    return amount;
+  });
+  const agreed = forField('agreedAmount', () => {
+    if (input.agreedAmount === '' || input.agreedAmount == null) return null;
+    const amount = parseMoney(input.agreedAmount, currency);
+    reject(amount > claimed, '합의액은 청구액보다 클 수 없습니다.');
+    return amount;
+  });
+  const vendorUrl = forField('vendorUrl', () => parseOptionalUrl(input.vendorUrl));
+  const issue = forField('issue', () => requireText(input.issue, 3000, '문제 설명을 입력하세요.'));
   const items = parseItems(input.items, currency);
-  const claimed = parseMoney(input.claimedAmount, currency);
-  reject(claimed === 0, '청구액은 0보다 커야 합니다.');
-  const agreed = input.agreedAmount === '' || input.agreedAmount == null ? null : parseMoney(input.agreedAmount, currency);
-  reject(agreed !== null && agreed > claimed, '합의액은 청구액보다 클 수 없습니다.');
-  const deadline = input.deadline ? parseDate(input.deadline) : null;
+  const deadline = forField('deadline', () => input.deadline ? parseDate(input.deadline) : null);
   const deadlineQuote = cleanText(input.deadlineQuote, 1000);
-  reject(deadline && !deadlineQuote, '기한은 판매처 원문 근거와 함께 기록하세요.');
+  forField('deadlineQuote', () => reject(deadline && !deadlineQuote, '기한은 판매처 원문 근거와 함께 기록하세요.'));
   return {
-    title: requireText(input.title, 150, '상품명을 입력하세요.'),
-    vendor: requireText(input.vendor, 100, '판매처를 입력하세요.'),
-    vendorUrl: parseOptionalUrl(input.vendorUrl),
-    orderRef: requireText(input.orderRef, 100, '주문번호를 입력하세요.'),
-    orderedOn: parsePastDate(input.orderedOn),
+    title,
+    vendor,
+    vendorUrl,
+    orderRef,
+    orderedOn,
     kind: input.kind,
     currency,
     items,
     claimed,
     agreed,
-    issue: requireText(input.issue, 3000, '문제 설명을 입력하세요.'),
+    issue,
     issueEnglish: cleanText(input.issueEnglish, 3000),
     deadline,
     deadlineQuote,
@@ -65,18 +80,16 @@ export function parseClaimInput(input = {}) {
   };
 }
 
+// Item errors point at "items.<index>.<field>".
 function parseItems(items, currency) {
-  reject(!Array.isArray(items) || items.length < 1 || items.length > MAX_ITEMS, `품목을 1~${MAX_ITEMS}개 입력하세요.`);
-  return items.map(item => {
-    const orderedQty = parseInteger(item.orderedQty, {min: 1, max: 10000}, '주문 수량을 확인하세요.');
-    const claimQty = parseInteger(item.claimQty, {min: 1, max: orderedQty}, '문제 수량은 1 이상, 주문 수량 이하로 입력하세요.');
-    return {
-      name: requireText(item.name, 150, '품목명을 입력하세요.'),
-      sku: cleanText(item.sku, 100),
-      orderedQty,
-      claimQty,
-      unitPrice: parseMoney(item.unitPrice, currency),
-    };
+  forField('items', () => reject(!Array.isArray(items) || items.length < 1 || items.length > MAX_ITEMS, `품목을 1~${MAX_ITEMS}개 입력하세요.`));
+  return items.map((item, index) => {
+    const at = name => `items.${index}.${name}`;
+    const name = forField(at('name'), () => requireText(item.name, 150, '품목명을 입력하세요.'));
+    const orderedQty = forField(at('orderedQty'), () => parseInteger(item.orderedQty, {min: 1, max: 10000}, '주문 수량은 1~10000 사이로 입력하세요.'));
+    const claimQty = forField(at('claimQty'), () => parseInteger(item.claimQty, {min: 1, max: orderedQty}, '문제 수량은 1 이상, 주문 수량 이하로 입력하세요.'));
+    const unitPrice = forField(at('unitPrice'), () => parseMoney(item.unitPrice, currency));
+    return {name, sku: cleanText(item.sku, 100), orderedQty, claimQty, unitPrice};
   });
 }
 

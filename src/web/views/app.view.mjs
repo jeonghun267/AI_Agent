@@ -12,6 +12,8 @@ import * as receiptForm from './dialogs/receipt-form.view.mjs';
 import * as replyForm from './dialogs/reply-form.view.mjs';
 import * as draftDialogs from './dialogs/draft.view.mjs';
 import * as misc from './dialogs/misc.view.mjs';
+import {aiProgress, aiHint} from './components/ai-progress.view.mjs';
+import {validateForm, showFieldError, clearFieldError} from './components/form-feedback.view.mjs';
 
 // Route name -> page renderer (signed-in pages only).
 const PAGES = {
@@ -37,18 +39,34 @@ const DIALOGS = {
   'delete-account': () => ({title: '회원 탈퇴', body: settings.renderDeleteAccountDialog()}),
 };
 
-const OVERLAYS = {'ai-consent': misc.renderAiConsent};
+const OVERLAYS = {'ai-consent': misc.renderAiConsent, discard: misc.renderDiscard};
+
+// A dialog form becomes "dirty" when the user types in it (or it holds AI output).
+const hasUnsavedInput = () => !!document.querySelector('#modal form[data-dirty]');
+
+// Closing a dialog with unsaved input asks first, on top of the dialog.
+function requestCloseDialog(vms) {
+  const close = () => {
+    vms.draft.cancel();
+    vms.app.closeDialog();
+  };
+  if (hasUnsavedInput()) vms.app.openOverlay('discard', {onDiscard: close});
+  else close();
+}
 
 // Longest dialog exit transition in components.css (mobile sheet: 200ms) plus margin.
 const CLOSE_ANIMATION_MS = 250;
 
 const dialogHandlers = {
   click: {
-    'close-dialog': ({vms}) => {
-      vms.draft.cancel();
-      vms.app.closeDialog();
-    },
+    'close-dialog': ({vms}) => requestCloseDialog(vms),
     'close-overlay': ({vms}) => vms.app.closeOverlay(),
+    'discard-dialog': ({vms}) => {
+      const {onDiscard} = vms.app.state.overlay.props;
+      vms.app.closeOverlay();
+      onDiscard();
+    },
+    'cancel-ai': ({vms}) => vms.ai.cancel(),
   },
 };
 
@@ -67,6 +85,10 @@ function dialogMarkup({title, body}, closeAction) {
 }
 
 function showError(form, error, vms) {
+  if (error.code === 'cancelled') {
+    vms.app.notify('AI 작업을 취소했어요.');
+    return;
+  }
   const target = form?.querySelector('.error');
   if (target) target.textContent = error.message;
   else vms.app.notify(error.message);
@@ -76,7 +98,8 @@ function showError(form, error, vms) {
 // events to handlers, and keeps location.hash and the dialogs in sync.
 export function mountApp({root, modal, overlay, toast}, vms) {
   let scheduled = false;
-  let shown = {dialog: null, overlay: null, toast: null};
+  let shown = {dialog: null, overlay: null, toast: null, aiBusy: ''};
+  let aiTicker = null;
 
   const snapshot = () => ({
     app: vms.app.state, session: vms.session.state, list: vms.list.state,
@@ -131,12 +154,41 @@ export function mountApp({root, modal, overlay, toast}, vms) {
 
     renderLayer(modal, 'dialog', DIALOGS, 'close-dialog', s);
     renderLayer(overlay, 'overlay', OVERLAYS, 'close-overlay', s);
+    renderAiProgress(s);
+    // Our own inline errors replace the browser's pop-up bubbles.
+    for (const form of document.querySelectorAll('form')) form.noValidate = true;
 
     if (s.app.toast !== shown.toast) {
       shown.toast = s.app.toast;
       toast.textContent = shown.toast?.message ?? '';
       toast.classList.toggle('show', !!shown.toast);
     }
+    // A modal dialog makes the rest of the page inert and covers it, so the
+    // toast lives inside the topmost open dialog while one is open.
+    const host = overlay.open ? overlay : modal.open ? modal : document.body;
+    if (toast.parentElement !== host) host.append(toast);
+  }
+
+  // Pages render their AI progress rows from state. Dialogs are not re-rendered
+  // on every change, so their [data-ai-slot] placeholders are filled here.
+  function renderAiProgress(s) {
+    for (const slot of document.querySelectorAll('dialog [data-ai-slot]')) {
+      const active = s.ai.busy === slot.dataset.aiSlot;
+      if (active !== (slot.dataset.active === 'true')) {
+        renderInto(slot, active ? aiProgress(s.ai, slot.dataset.aiSlot) : '');
+        slot.dataset.active = String(active);
+      }
+    }
+    if (s.ai.busy === shown.aiBusy) return;
+    shown.aiBusy = s.ai.busy;
+    clearInterval(aiTicker);
+    if (!s.ai.busy) return;
+    // Seconds counter: updates text in place instead of re-rendering.
+    aiTicker = setInterval(() => {
+      const seconds = Math.floor((Date.now() - vms.ai.state.startedAt) / 1000);
+      for (const el of document.querySelectorAll('[data-ai-elapsed]')) el.textContent = `${seconds}초`;
+      for (const el of document.querySelectorAll('[data-ai-hint]')) el.textContent = aiHint(seconds);
+    }, 1000);
   }
 
   for (const vm of Object.values(vms)) vm.subscribe(schedule);
@@ -160,23 +212,31 @@ export function mountApp({root, modal, overlay, toast}, vms) {
     }
   });
 
+  // Submit: check inputs in the page (errors under each input), then call the
+  // handler; a server error that names an input is shown under that input too.
   document.addEventListener('submit', async event => {
     const form = event.target;
     const handler = HANDLERS.submit[form.id];
     if (!handler) return;
     event.preventDefault();
     if (form.dataset.saving) return;
+    const error = form.querySelector('.error');
+    if (error) error.textContent = '';
+    const firstInvalid = validateForm(form);
+    if (firstInvalid) {
+      firstInvalid.focus();
+      return;
+    }
     form.dataset.saving = 'true';
     const submit = form.querySelector('[type="submit"]');
     submit?.setAttribute('aria-busy', 'true');
     if (submit) submit.disabled = true;
-    const error = form.querySelector('.error');
-    if (error) error.textContent = '';
     try {
       await handler({form, values: formValues(form), vms, event});
     } catch (failure) {
-      showError(form, failure, vms);
-      form.querySelector(':user-invalid, [aria-invalid="true"]')?.focus();
+      const input = failure.field ? showFieldError(form, failure.field, failure.message) : null;
+      if (input) input.focus();
+      else showError(form, failure, vms);
     } finally {
       delete form.dataset.saving;
       if (submit) {
@@ -188,6 +248,10 @@ export function mountApp({root, modal, overlay, toast}, vms) {
 
   for (const type of ['input', 'change']) {
     document.addEventListener(type, event => {
+      const form = event.target.form;
+      // Editing an input clears its error; typing in a dialog marks the form as unsaved.
+      clearFieldError(event.target);
+      if (form?.closest('dialog')) form.dataset.dirty = 'true';
       const handler = HANDLERS[type][event.target.id];
       if (handler) Promise.resolve(handler({el: event.target, event, vms})).catch(error => vms.app.notify(error.message));
     });
@@ -200,7 +264,13 @@ export function mountApp({root, modal, overlay, toast}, vms) {
   });
 
   // Escape closes a dialog through the ViewModel so state stays the source of truth.
-  modal.addEventListener('cancel', event => { event.preventDefault(); vms.draft.cancel(); vms.app.closeDialog(); });
+  modal.addEventListener('cancel', event => { event.preventDefault(); requestCloseDialog(vms); });
+  // Reloading or leaving the page with unsaved dialog input asks the browser to confirm.
+  window.addEventListener('beforeunload', event => {
+    if (!hasUnsavedInput()) return;
+    event.preventDefault();
+    event.returnValue = '';
+  });
   overlay.addEventListener('cancel', event => { event.preventDefault(); vms.app.closeOverlay(); });
 
   window.addEventListener('hashchange', () => {

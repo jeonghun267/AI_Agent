@@ -1,10 +1,15 @@
 import {Observable} from '../core/observable.mjs';
 
 // AI helpers (translation, reply analysis, document reading). Asks for consent
-// first and turns "consent required" from the server back into the consent dialog.
+// first, turns "consent required" from the server back into the consent dialog,
+// and exposes what is running (busy + startedAt) so the view can show progress.
 export class AiAssistViewModel extends Observable {
+  #controller = null;
+
   constructor({models, session, app}) {
-    super({busy: ''});
+    // busy: which AI task runs ('' | 'translate' | 'reply' | 'extract'),
+    // target: what it runs on (the file id for 'extract'), startedAt: ms timestamp.
+    super({busy: '', target: '', startedAt: 0});
     this.models = models;
     this.session = session;
     this.app = app;
@@ -28,10 +33,18 @@ export class AiAssistViewModel extends Observable {
     if (onAgree) await onAgree();
   }
 
-  async #run(kind, call) {
-    this.setState({busy: kind});
+  // Stops waiting for the current AI call. The result, if it still arrives, is ignored.
+  cancel() {
+    this.#controller?.abort();
+  }
+
+  async #run(kind, call, target = '') {
+    if (this.state.busy) throw new Error('다른 AI 작업이 진행 중이에요. 끝나거나 취소한 뒤 다시 시도하세요.');
+    const controller = new AbortController();
+    this.#controller = controller;
+    this.setState({busy: kind, target, startedAt: Date.now()});
     try {
-      return await call();
+      return await call(controller.signal);
     } catch (error) {
       if (error.code === 'ai_consent_required') {
         await this.session.refresh();
@@ -39,20 +52,21 @@ export class AiAssistViewModel extends Observable {
       }
       throw error;
     } finally {
-      this.setState({busy: ''});
+      if (this.#controller === controller) this.#controller = null;
+      this.setState({busy: '', target: '', startedAt: 0});
     }
   }
 
   translateIssue(text) {
-    return this.#run('translate', () => this.models.ai.translateIssue(text));
+    return this.#run('translate', signal => this.models.ai.translateIssue(text, {signal}));
   }
 
   analyzeReply(claimId, body) {
-    return this.#run('reply', () => this.models.ai.analyzeReply(claimId, body));
+    return this.#run('reply', signal => this.models.ai.analyzeReply(claimId, body, {signal}));
   }
 
   async extract(claimId, fileId) {
-    const result = await this.#run('extract', () => this.models.ai.extract(claimId, fileId));
+    const result = await this.#run('extract', signal => this.models.ai.extract(claimId, fileId, {signal}), fileId);
     this.app.openDialog('extraction', {result});
     return result;
   }

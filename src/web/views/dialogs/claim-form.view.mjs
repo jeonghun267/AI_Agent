@@ -39,7 +39,7 @@ export function render({mode, suggestion}, {detail, session}) {
   const currencies = Object.entries(config.currencies).map(([code, info]) => [code, `${code} · ${info.label}`]);
   return {
     title: mode === 'edit' ? '정보·합의 수정' : '새 클레임',
-    body: html`<form id="claim-form" data-mode="${mode}" data-key="${newRequestKey()}">
+    body: html`<form id="claim-form" data-mode="${mode}" data-key="${newRequestKey()}" ${suggestion ? html`data-dirty="true"` : ''}>
       ${suggestion ? html`<div class="ai-note">AI가 문서에서 읽은 값을 채웠어요. 원문과 다르지 않은지 확인한 뒤 저장하세요.</div>` : ''}
       <div class="form-grid">
         ${field('상품명', 'title', value.title, {required: true, attrs: 'maxlength="150"'})}
@@ -56,6 +56,7 @@ export function render({mode, suggestion}, {detail, session}) {
           hint: '판매처에 보낼 영어 문장이에요. 비워 두면 문의 초안을 만들 때 번역해요.',
           extra: session.ai.enabled ? html`<button class="btn small" type="button" data-action="translate-issue">AI로 영문 작성</button>` : '',
         })}
+        <div class="full" data-ai-slot="translate"></div>
         <div id="item-rows" class="full">${value.items.map(itemRow)}</div>
         <button type="button" class="btn small full" data-action="add-item">+ 품목 추가</button>
         ${field('판매처 기한 (선택)', 'deadline', value.deadline, {type: 'date'})}
@@ -87,6 +88,7 @@ export const handlers = {
       const form = el.closest('form');
       const {english} = await vms.ai.translateIssue(form.elements.issue.value);
       form.elements.issueEnglish.value = english;
+      form.dataset.dirty = 'true';
       vms.app.notify('영문 설명을 채웠어요. 내용을 확인해 주세요.');
     }),
   },

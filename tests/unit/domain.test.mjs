@@ -43,6 +43,20 @@ test('claim input: vendor, currency and amounts are validated', () => {
   rejects(() => parseClaimInput(claimInput({vendorUrl: 'javascript:alert(1)'})));
 });
 
+test('validation errors name the input they belong to', () => {
+  const fieldOf = fn => { try { fn(); } catch (error) { return error.field; } return null; };
+  assert.equal(fieldOf(() => parseClaimInput(claimInput({vendor: ''}))), 'vendor');
+  assert.equal(fieldOf(() => parseClaimInput(claimInput({claimedAmount: '1.001'}))), 'claimedAmount');
+  assert.equal(fieldOf(() => parseClaimInput(claimInput({agreedAmount: '50.00'}))), 'agreedAmount');
+  assert.equal(fieldOf(() => parseClaimInput(claimInput({items: [{name: 'x', orderedQty: 1, claimQty: 1, unitPrice: '1.234'}]}))), 'items.0.unitPrice');
+  assert.equal(fieldOf(() => parseClaimInput(claimInput({deadline: '2026-11-01'}))), 'deadlineQuote');
+  const agreed = parseClaimInput(claimInput({agreedAmount: '39.90'}));
+  const receipt = {kind: 'cash', amount: '10.00', receivedOn: '2026-10-05', confirmed: true, transactionRef: 'bank-1'};
+  assert.equal(fieldOf(() => parseReceipt(agreed, totals(agreed, []), [], {...receipt, amount: '99.00'})), 'amount');
+  assert.equal(fieldOf(() => parseReceipt(agreed, totals(agreed, []), [], {...receipt, transactionRef: ''})), 'transactionRef');
+  assert.equal(fieldOf(() => parseReceipt(agreed, totals(agreed, []), [], {...receipt, confirmed: false})), 'confirmed');
+});
+
 test('dates: "today" in a time zone ahead of UTC is not treated as the future', () => {
   const day = offsetHours => new Date(Date.now() + offsetHours * 3600 * 1000).toISOString().slice(0, 10);
   assert.equal(parsePastDate(day(9)), day(9), 'Korea (UTC+9) today');

@@ -19,7 +19,7 @@ export function sendFile(res, file, headers = {}) {
 // request id and answered with a generic message; details never leak.
 export function sendError(res, error, headers, requestId, logger) {
   if (error instanceof AppError) {
-    sendJson(res, error.status, {error: error.code, message: error.message, requestId}, headers);
+    sendJson(res, error.status, {error: error.code, message: error.message, ...(error.field ? {field: error.field} : {}), requestId}, headers);
     return;
   }
   if (String(error?.message).includes('UNIQUE constraint failed')) {

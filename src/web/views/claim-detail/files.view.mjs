@@ -2,6 +2,7 @@ import {html} from '../../core/html.mjs';
 import {dateTime, fileSize} from '../../core/format.mjs';
 import {saveBlob} from '../../core/dom.mjs';
 import {emptyState, aiNote} from '../components/ui.view.mjs';
+import {aiProgress} from '../components/ai-progress.view.mjs';
 
 function uploadStatus(upload) {
   if (!upload) return '';
@@ -24,16 +25,19 @@ export function render(claim, {detail, session, ai}) {
       </div>
     </div>` : ''}
     ${uploadStatus(detail.upload)}
-    ${claim.files.length ? claim.files.map(file => html`<article class="item-card file-card">
-      <div>
-        <h3>${file.name}</h3>
-        <small class="case-caption"><span>${fileSize(file.size)}</span><span>${dateTime(file.createdAt)}</span>${file.usedAsProof ? html`<span>회수 기록의 증빙</span>` : ''}</small>
+    ${claim.files.length ? claim.files.map(file => html`<article class="item-card">
+      <div class="file-card">
+        <div>
+          <h3>${file.name}</h3>
+          <small class="case-caption"><span>${fileSize(file.size)}</span><span>${dateTime(file.createdAt)}</span>${file.usedAsProof ? html`<span>회수 기록의 증빙</span>` : ''}</small>
+        </div>
+        <div class="actions">
+          <button class="btn small" type="button" data-action="open-file" data-file="${file.id}">${file.mime.startsWith('image/') ? '보기' : '다운로드'}</button>
+          ${aiEnabled && !claim.deleted ? html`<button class="btn small" type="button" data-action="extract-file" data-file="${file.id}" ${ai.busy ? html`disabled` : ''}>AI로 주문 정보 읽기</button>` : ''}
+          ${!file.usedAsProof && !claim.deleted ? html`<button class="btn small ghost" type="button" data-action="remove-file" data-file="${file.id}">삭제</button>` : ''}
+        </div>
       </div>
-      <div class="actions">
-        <button class="btn small" type="button" data-action="open-file" data-file="${file.id}">${file.mime.startsWith('image/') ? '보기' : '다운로드'}</button>
-        ${aiEnabled && !claim.deleted ? html`<button class="btn small" type="button" data-action="extract-file" data-file="${file.id}" ${ai.busy === 'extract' ? html`disabled` : ''}>${ai.busy === 'extract' ? 'AI가 읽는 중…' : 'AI로 주문 정보 읽기'}</button>` : ''}
-        ${!file.usedAsProof && !claim.deleted ? html`<button class="btn small ghost" type="button" data-action="remove-file" data-file="${file.id}">삭제</button>` : ''}
-      </div>
+      ${ai.target === file.id ? aiProgress(ai, 'extract') : ''}
     </article>`) : emptyState('아직 올린 증빙이 없어요')}
     ${aiEnabled ? aiNote('AI로 읽은 값은 미리보기예요. 확인한 뒤 "사건 정보에 반영"을 눌러 직접 저장해야 반영돼요.') : ''}`;
 }

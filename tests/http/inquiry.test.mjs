@@ -64,6 +64,7 @@ test('receipts: retries, cross-claim duplicates, concurrency and missing referen
   claim = await current(user, claim.id);
   let result = await user.call(`/api/claims/${claim.id}/receipts`, {method: 'POST', data, key: key(), version: claim.version});
   assert.equal(result.data.error, 'duplicate_transaction');
+  assert.equal(result.data.field, 'transactionRef');
   const other = await createClaim(user);
   result = await user.call(`/api/claims/${other.id}/receipts`, {method: 'POST', data: cash(other, 'BANK-0001'), key: key(), version: other.version});
   assert.equal(result.data.error, 'duplicate_transaction');

@@ -1,4 +1,4 @@
-import {reject} from '../domain/errors.mjs';
+import {reject, forField} from '../domain/errors.mjs';
 import {newId, nowIso} from '../domain/primitives.mjs';
 import {cleanText} from '../domain/validation.mjs';
 import {REPLY_KINDS, stateAfterReply} from '../domain/claim.mjs';
@@ -8,8 +8,8 @@ import {REPLY_KINDS, stateAfterReply} from '../domain/claim.mjs';
 export function createReplyService({claims}) {
   function record(ownerId, claimId, version, input) {
     const body = cleanText(input.body, 8000);
-    reject(!body, '판매처 답변 원문을 붙여 넣어 주세요.');
-    reject(!Object.hasOwn(REPLY_KINDS, input.kind), '답변 유형을 선택하세요.');
+    forField('body', () => reject(!body, '판매처 답변 원문을 붙여 넣어 주세요.'));
+    forField('kind', () => reject(!Object.hasOwn(REPLY_KINDS, input.kind), '답변 유형을 선택하세요.'));
     const reply = {
       id: newId(),
       body,

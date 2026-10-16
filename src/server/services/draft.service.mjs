@@ -1,4 +1,4 @@
-import {reject} from '../domain/errors.mjs';
+import {reject, forField} from '../domain/errors.mjs';
 import {newId, nowIso, sha256} from '../domain/primitives.mjs';
 import {cleanText} from '../domain/validation.mjs';
 import {factualFingerprint} from '../domain/claim.mjs';
@@ -23,7 +23,7 @@ export function createDraftService(ctx) {
 
   function save(ownerId, claimId, version, input, key) {
     const body = cleanText(input.body, 15000);
-    reject(body.length < 20, '판매처에 보낼 문의 내용을 20자 이상 작성하세요.');
+    forField('body', () => reject(body.length < 20, '판매처에 보낼 문의 내용을 20자 이상 작성하세요.'));
     const origin = ORIGINS.includes(input.origin) ? input.origin : 'manual';
     const model = origin === 'ai' ? cleanText(input.model, 100) : '';
 
@@ -44,7 +44,7 @@ export function createDraftService(ctx) {
   }
 
   function submit(ownerId, claimId, version, input, key) {
-    reject(input.confirmed !== true, '최신 문의 내용을 검토하고 판매처에 직접 보냈는지 확인해 주세요.');
+    forField('confirmed', () => reject(input.confirmed !== true, '최신 문의 내용을 검토하고 판매처에 직접 보냈는지 확인해 주세요.'));
     const note = cleanText(input.note, 500);
 
     withIdempotency(ctx, ownerId, key, `draft:submit:${claimId}`, {version, draftId: input.draftId, note}, () => {

@@ -1,5 +1,5 @@
 import {transaction} from '../repositories/db.mjs';
-import {reject} from '../domain/errors.mjs';
+import {reject, forField} from '../domain/errors.mjs';
 import {nowIso} from '../domain/primitives.mjs';
 
 export function createAccountService(ctx) {
@@ -25,7 +25,8 @@ export function createAccountService(ctx) {
 
   // Permanent: removes the account and every row it owns.
   async function deleteAccount(ownerId, password) {
-    reject(!(await auth.verifyPassword(ownerId, password)), '비밀번호가 맞지 않아요.', 'invalid_password', 403);
+    const valid = await auth.verifyPassword(ownerId, password);
+    forField('password', () => reject(!valid, '비밀번호가 맞지 않아요. 다시 입력하세요.', 'invalid_password', 403));
     transaction(db, () => repos.account.purgeOwner(ownerId));
   }
 
