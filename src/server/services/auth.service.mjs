@@ -124,7 +124,7 @@ export function createAuthService({db, repos, config, mail, logger}) {
   // Delivery is never awaited, so a slow or failing provider changes neither the
   // answer nor its timing. The log names the failure, not the address.
   function deliver(message) {
-    (async () => mail.send(message))().catch(error => logger.error(`[mail] delivery failed: ${error.code ?? error.name}`));
+    (async () => mail.send(message))().catch(error => logger.error(`[mail] delivery failed: ${error.code ?? error.name}${error.detail ? ` (${error.detail})` : ''}`));
   }
 
   // Runs once the response has been sent, so doing the work for a real account

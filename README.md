@@ -36,9 +36,15 @@ npm run ai:smoke
 
 ### 계정 메일 (인증·비밀번호 재설정)
 
-개발·시험에서는 메일을 실제로 보내지 않고 **서버 로그에 출력**한다(`MAIL_PROVIDER=console`, 개발 기본값). `npm start`를 띄운 터미널에서 `[mail]`로 시작하는 줄의 링크를 브라우저에 붙여 넣으면 된다. 데모 계정은 인증된 상태로 만들어진다.
+메일은 [Resend](https://resend.com)로 보낸다. `.env`에 `RESEND_API_KEY`를 넣으면 Resend가 켜진다. 발신 주소는 `MAIL_FROM`(예: `ReLo <no-reply@내도메인>`)이고, 그 도메인은 Resend에서 인증(SPF·DKIM)해야 한다. `MAIL_FROM`이 없으면 개발에서는 Resend 시험 발신자(`onboarding@resend.dev`)를 쓰는데, 이 발신자는 **내 Resend 계정 주소로만** 배달된다. 운영에서는 `MAIL_FROM`이 없으면 서버가 시작하지 않는다.
 
-운영(`APP_ENV=production`)에서는 console provider를 쓸 수 없고, 실제 메일 서비스를 붙이기 전까지 메일 기능이 꺼진다(`MAIL_PROVIDER=disabled`: 인증 띠와 '비밀번호를 잊었어요' 링크가 숨겨진다).
+```bash
+npm run mail:smoke -- you@example.com
+```
+
+위 명령은 실제 키로 시험 메일 한 통을 보낸다.
+
+키가 없으면 개발·시험에서는 메일을 보내지 않고 **서버 로그에 출력**한다(`MAIL_PROVIDER=console`). `npm start`를 띄운 터미널에서 `[mail]`로 시작하는 줄의 링크를 브라우저에 붙여 넣으면 된다. 데모 계정은 인증된 상태로 만들어진다. 운영에서는 console을 쓸 수 없고, 키가 없으면 메일 기능이 꺼진다(`MAIL_PROVIDER=disabled`: 인증 띠와 '비밀번호를 잊었어요' 링크가 숨겨진다).
 
 ## 명령
 
@@ -51,6 +57,7 @@ npm run ai:smoke
 | `npm run verify` | 문법 검사 → 시험 → 브라우저 시험을 순서대로 |
 | `npm run check` | 모든 `.mjs` 문법 검사 |
 | `npm run ai:smoke` | 실제 Gemini 연결 확인 (API 호출 4회) |
+| `npm run mail:smoke -- 주소` | 실제 Resend로 시험 메일 1통 발송 |
 | `npm run backup` | 운영 DB 백업. `-- --verify`를 붙이면 변경 이력 무결성도 검사 |
 
 ## 구조
@@ -68,10 +75,10 @@ docs/         ARCHITECTURE.md, DESIGN.md(디자인 명세), AI.md, archive/(이�
 
 다음은 아직 구현되지 않았다.
 
-- 실제 메일 발송 서비스 연동(Resend 등). 이메일 인증·비밀번호 재설정 흐름과 `src/server/mail/` provider 경계는 있지만, 지금은 개발용 console provider뿐이라 운영에서는 메일 기능이 꺼진다. 서비스를 고른 뒤 provider 하나와 발신 도메인 설정(SPF·DKIM)을 추가하고, API 키는 `.env`에만 둔다
+- Resend 운영 설정: 발신 도메인 인증(SPF·DKIM), 운영용 `RESEND_API_KEY`(발송 전용 권한)와 `MAIL_FROM` 설정, `npm run mail:smoke`로 실제 배달 확인. 반송·스팸 신고 처리(Resend 웹훅)는 아직 없다
 - 가입 단계의 이메일 열거: 가입하면 바로 로그인되므로 이미 가입한 이메일에는 409로 답할 수밖에 없다(IP당 시간당 10회로 제한). 완전히 막으려면 '메일 링크를 연 뒤에 계정 생성'으로 가입 흐름을 바꿔야 한다. 비밀번호 재설정 요청은 이미 계정 유무를 드러내지 않는다
 - 배포: HTTPS 호스트, 영속 디스크, 외부 백업 보관. `APP_ENV=production`과 `APP_ORIGIN=https://…`를 설정해야 한다
-- 이용약관·개인정보처리방침과 국외 이전(Google Gemini) 고지 문구의 법률 검토
+- 이용약관·개인정보처리방침과 국외 이전(Google Gemini, 메일 발송 Resend) 고지 문구의 법률 검토
 - Gemini 유료 등급 전환 (무료 등급은 입력이 모델 개선에 쓰일 수 있다)
 - 업로드 파일 악성코드 검사, 결제·구독
 - 여러 서버 인스턴스 운영 (로그인·재설정 요청 시도 제한이 메모리 기반이라 단일 프로세스 기준이다)
