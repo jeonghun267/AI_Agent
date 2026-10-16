@@ -11,7 +11,7 @@ import {nowIso} from '../../src/server/domain/primitives.mjs';
 async function database(t) {
   const dir = await mkdtemp(join(tmpdir(), 'relo-db-'));
   const db = openDatabase(dir);
-  t.after(async () => { db.close(); await rm(dir, {recursive: true, force: true}); });
+  t.after(async () => { db.close(); await rm(dir, {recursive: true, force: true, maxRetries: 5, retryDelay: 100}); });
   return {db, repos: createRepositories(db)};
 }
 
@@ -26,7 +26,7 @@ function seedOwner(repos, ownerId) {
 
 test('migrations run once and reopening keeps data', async t => {
   const dir = await mkdtemp(join(tmpdir(), 'relo-db-'));
-  t.after(() => rm(dir, {recursive: true, force: true}));
+  t.after(() => rm(dir, {recursive: true, force: true, maxRetries: 5, retryDelay: 100}));
   const first = openDatabase(dir);
   seedOwner(createRepositories(first), 'u1');
   first.close();

@@ -40,9 +40,12 @@ export const handlers = {
   submit: {
     'receipt-form': async ({form, vms}) => {
       const values = formValues(form);
-      await vms.detail.recordReceipt({...values, reverses: values.reverses || null}, form.dataset.key);
+      const before = vms.detail.state.claim.state;
+      const claim = await vms.detail.recordReceipt({...values, reverses: values.reverses || null}, form.dataset.key);
       vms.app.closeDialog();
-      vms.app.notify('기록했어요.');
+      // The one celebration moment (DESIGN.md §8): the first time everything came back.
+      if (claim.state === 'recovered' && before !== 'recovered') vms.app.openDialog('celebrate', {claim});
+      else vms.app.notify('기록했어요.');
     },
   },
 };

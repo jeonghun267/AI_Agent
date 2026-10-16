@@ -37,7 +37,8 @@ export async function startApp(t, {env = {}, aiProvider = createFakeProvider(), 
   const base = await app.listen(0, '127.0.0.1');
   t.after(async () => {
     await app.close();
-    await rm(dir, {recursive: true, force: true});
+    // Windows can hold a just-closed SQLite file for a moment (e.g. antivirus); retry the delete.
+    await rm(dir, {recursive: true, force: true, maxRetries: 5, retryDelay: 100});
   });
   return {app, base, aiProvider, mail, client: () => createClient(base)};
 }

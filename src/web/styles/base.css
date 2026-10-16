@@ -1,5 +1,16 @@
 /* Design tokens, reset, typography and page layout. See docs/DESIGN.md.
    Components live in components.css. Never hard-code a value that has a token. */
+
+/* Pretendard 1.3.9 (SIL OFL 1.1, assets/fonts/Pretendard-LICENSE.txt), bundled so
+   Korean text looks the same on every device. One variable file covers weights 45–920. */
+@font-face {
+  font-family: 'Pretendard Variable';
+  src: url('/assets/fonts/PretendardVariable-1.3.9.woff2') format('woff2-variations');
+  font-weight: 45 920;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
   /* Spacing: 4px grid */
   --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px; --space-5: 20px;

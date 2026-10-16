@@ -1,12 +1,17 @@
 import {html} from '../../core/html.mjs';
 import {field, formError} from '../components/ui.view.mjs';
+import {doriFigure} from '../components/dori.view.mjs';
 
 export const brand = () => html`<a class="brand" href="#/"><img src="/assets/dori-mark.svg" alt="" width="36" height="36">ReLo</a>`;
 
 const MISMATCH = '비밀번호가 서로 달라요. 두 칸에 같은 비밀번호를 입력하세요.';
 
-// Sign-in screens: one card in the exact centre of the viewport.
-const authScreen = content => html`<div class="auth-screen"><main id="main" class="auth-page">${brand()}${content}</main></div>`;
+// Sign-in screens: one card in the exact centre of the viewport, with Dori
+// standing on its top edge and waving once when the screen opens.
+const authScreen = content => html`<div class="auth-screen"><main id="main" class="auth-page">
+  <div class="auth-dori">${doriFigure({pose: 'waving', size: 'md'})}</div>
+  ${brand()}${content}
+</main></div>`;
 
 export function renderLogin({session}) {
   const demo = session.config?.demoAccount;

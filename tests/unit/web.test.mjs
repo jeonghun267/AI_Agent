@@ -8,6 +8,29 @@ import {createPreparationController} from '../../src/web/core/preparation.mjs';
 import {Observable} from '../../src/web/core/observable.mjs';
 import {selectMetrics, selectVisibleClaims} from '../../src/web/viewmodels/claim-list.vm.mjs';
 import {selectNeedsEmailVerification} from '../../src/web/viewmodels/session.vm.mjs';
+import {selectProgress, selectRecovery} from '../../src/web/viewmodels/claim-progress.mjs';
+
+test('progress steps follow the claim state; disputes and waivers are flagged', () => {
+  const statuses = state => selectProgress({state}).steps.map(step => step.status[0]).join('');
+  assert.equal(statuses('preparing'), 'cttttt');
+  assert.equal(statuses('awaiting'), 'ddcttt');
+  assert.equal(statuses('partial'), 'ddddct');
+  assert.equal(statuses('recovered'), 'dddddc', 'everything came back; only closing is left');
+  assert.equal(statuses('completed'), 'dddddd');
+  assert.equal(selectProgress({state: 'disputed'}).flag, 'disputed');
+  assert.equal(statuses('disputed'), 'dddctt');
+  assert.deepEqual([selectProgress({state: 'waived'}).flag, statuses('waived')], ['waived', 'tttttt']);
+});
+
+test('recovery compares what came back with what was asked for', () => {
+  const summary = {cash: 2000, goods: 1, repair: false, requestedQty: 2};
+  assert.deepEqual(selectRecovery({kind: 'refund', currency: 'EUR', claimed: 7980, agreed: 3990, summary}),
+    {unit: 'money', got: 2000, target: 3990, currency: 'EUR', percent: 50, basis: '합의액 기준'});
+  assert.equal(selectRecovery({kind: 'refund', currency: 'EUR', claimed: 4000, agreed: null, summary}).basis, '청구액 기준');
+  assert.equal(selectRecovery({kind: 'exchange', summary}).percent, 50);
+  assert.equal(selectRecovery({kind: 'repair', summary: {...summary, repair: true}}).percent, 100);
+  assert.equal(selectRecovery({kind: 'refund', currency: 'EUR', claimed: 100, agreed: 0, summary: {...summary, cash: 0}}).percent, 0, 'no division by zero');
+});
 
 test('html templates escape values unless they are templates themselves', () => {
   const name = '<img src=x onerror=alert(1)>';

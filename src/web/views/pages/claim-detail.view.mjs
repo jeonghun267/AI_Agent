@@ -1,6 +1,7 @@
 import {html} from '../../core/html.mjs';
 import {dateTime} from '../../core/format.mjs';
 import {statePill, emptyState, skeletonDetail} from '../components/ui.view.mjs';
+import {progressSteps, recoveryMeter} from '../components/progress.view.mjs';
 import * as overview from '../claim-detail/overview.view.mjs';
 import * as files from '../claim-detail/files.view.mjs';
 import * as inquiry from '../claim-detail/inquiry.view.mjs';
@@ -29,7 +30,7 @@ export function renderClaimDetail(snapshot) {
   const {detail, session} = snapshot;
   if (detail.loading) return html`<section class="panel">${skeletonDetail()}</section>`;
   if (detail.error || !detail.claim) {
-    return html`<section class="panel">${emptyState('클레임을 찾을 수 없어요', detail.error || '삭제됐거나 주소가 바뀌었을 수 있어요.', {action: {name: 'go-home', label: '내 클레임으로'}})}</section>`;
+    return html`<section class="panel">${emptyState('클레임을 찾을 수 없어요', detail.error || '삭제됐거나 주소가 바뀌었을 수 있어요.', {dori: 'sm', action: {name: 'go-home', label: '내 클레임으로'}})}</section>`;
   }
   const claim = detail.claim;
   const labels = session.config;
@@ -45,6 +46,10 @@ export function renderClaimDetail(snapshot) {
         <div><dt>요청</dt><dd>${labels.claimKinds[claim.kind]}</dd></div>
         <div><dt>마지막 저장</dt><dd>${dateTime(claim.updatedAt)}</dd></div>
       </dl>
+      <section class="progress-card" aria-label="진행 상황">
+        ${progressSteps(claim)}
+        ${recoveryMeter(claim)}
+      </section>
       <p class="next"><strong>다음 할 일</strong>${claim.nextStep}</p>
     </div>
     <section class="panel">

@@ -1,5 +1,7 @@
 import {html} from '../../core/html.mjs';
 import {formActions} from '../components/ui.view.mjs';
+import {doriFigure} from '../components/dori.view.mjs';
+import {money} from '../../core/format.mjs';
 import {AI_CONSENT_TEXT} from '../pages/settings.view.mjs';
 
 const TRANSITION_TEXT = {
@@ -42,6 +44,19 @@ export const renderConfirm = ({title, message, confirmLabel}) => ({
 export const renderImage = ({url, name}) => ({
   title: name,
   body: html`<img class="evidence-image" src="${url}" alt="${name}"><div class="actions"><a class="btn" href="${url}" download="${name}">다운로드</a></div>`,
+});
+
+const CELEBRATE_TEXT = {refund: '합의한 금액을 모두 돌려받았어요', exchange: '교환품을 모두 받았어요', repair: '수리 결과까지 확인했어요'};
+
+export const renderCelebrate = ({claim}) => ({
+  title: '회수 완료',
+  body: html`<div class="celebrate">
+    ${doriFigure({pose: 'celebrating', size: 'lg'})}
+    <h3>${CELEBRATE_TEXT[claim.kind]}</h3>
+    ${claim.kind === 'refund' ? html`<strong class="celebrate-amount">${money(claim.summary.cash, claim.currency)}</strong>` : ''}
+    <p>내용을 한 번 더 확인하고, 문제가 없으면 이 건을 종료하세요. 기록은 그대로 남아요.</p>
+    <button class="btn primary" type="button" data-action="close-dialog">좋아요</button>
+  </div>`,
 });
 
 export const renderDiscard = () => ({
