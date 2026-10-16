@@ -28,7 +28,7 @@ export function render(claim, {session, draft: draftState}) {
         ${canEdit && !latest.stale && !latest.submittedAt ? html`<button class="btn primary" type="button" data-action="submit-draft">판매처에 보냈어요</button>` : ''}
       </div>
       ${claim.drafts.length > 1 ? html`<details class="versions"><summary>이전 버전 ${claim.drafts.length - 1}개</summary>
-        ${claim.drafts.slice(1).map((draft, index) => html`<article class="history-card">
+        ${claim.drafts.slice(1).map((draft, index) => html`<article class="item-card">
           <header><strong>버전 ${claim.drafts.length - 1 - index}</strong><small>${dateTime(draft.createdAt)}${draft.submittedAt ? ' · 보냄' : ''}</small></header>
           <pre class="email-preview" lang="en">${draft.body}</pre></article>`)}
       </details>` : ''}`

@@ -17,9 +17,11 @@ mountApp({
 }, vms);
 
 vms.app.setOffline(!navigator.onLine);
+const initialRoute = parseHash(location.hash);
+vms.app.start(initialRoute);
 try {
   await vms.session.init();
-  await vms.app.setRoute(parseHash(location.hash));
+  await vms.app.setRoute(initialRoute);
 } catch (error) {
   document.querySelector('#app').textContent = `서비스에 연결하지 못했어요. 잠시 후 새로고침해 주세요. (${error.message})`;
 }

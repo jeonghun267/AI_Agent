@@ -8,7 +8,7 @@ export function render(claim, {session}) {
   return html`
     <div class="section-title"><div><h2>판매처 답변</h2><p class="muted">받은 답변 원문을 붙여 넣어 기록하세요. 환불 통지만으로는 입금으로 보지 않아요.</p></div>
       ${canRecord ? html`<button class="btn primary small" type="button" data-action="record-reply">답변 기록</button>` : ''}</div>
-    ${claim.replies.length ? claim.replies.map(reply => html`<article class="reply-card">
+    ${claim.replies.length ? claim.replies.map(reply => html`<article class="item-card">
       <header><strong>${kinds[reply.kind]}</strong><small>${dateTime(reply.recordedAt)}${reply.aiAssisted ? ' · AI 번역 참고' : ''}</small></header>
       ${reply.summaryKo ? html`<p>${reply.summaryKo}</p>` : ''}
       <details ${reply.translationKo ? '' : html`open`}><summary>원문</summary><pre>${reply.body}</pre></details>

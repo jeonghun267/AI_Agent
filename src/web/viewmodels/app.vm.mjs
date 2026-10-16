@@ -18,10 +18,19 @@ export class AppViewModel extends Observable {
     this.detail = detail;
   }
 
+  // Sets the starting route from the URL before the session is known, so the
+  // first signed-in render does not overwrite a deep link.
+  start(route) {
+    this.setState({route});
+  }
+
   async setRoute(route) {
     const previous = this.state.route;
     const signedIn = this.session.state.status === 'signedIn';
-    if (!signedIn && !PUBLIC_ROUTES.includes(route.name)) route = {name: 'login'};
+    if (!signedIn && !PUBLIC_ROUTES.includes(route.name)) {
+      if (route.name !== 'dashboard') this.#returnTo = route;
+      route = {name: 'login'};
+    }
     if (signedIn && PUBLIC_ROUTES.includes(route.name)) route = {name: 'dashboard'};
     this.setState({route});
     if (!signedIn) return;
@@ -41,9 +50,10 @@ export class AppViewModel extends Observable {
 
   // After an expired session, signing in again returns to the same screen.
   afterSignOut(expired) {
-    this.#returnTo = expired ? this.state.route : null;
+    const current = this.state.route;
     this.setState({dialog: null, overlay: null});
-    return this.setRoute({name: 'login'});
+    this.#returnTo = null;
+    return this.setRoute(expired ? current : {name: 'login'});
   }
 
   afterSignIn() {

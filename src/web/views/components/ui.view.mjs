@@ -42,6 +42,23 @@ export const formActions = (submitLabel = '저장', {cancelLabel = '취소', dan
     <button class="btn ${danger ? 'danger-fill' : 'primary'}" type="submit">${submitLabel}</button>
   </div>`;
 
-export const emptyState = (title, body = '') => html`<div class="empty"><h2>${title}</h2>${body ? html`<p>${body}</p>` : ''}</div>`;
+// Centred in its panel: title, one sentence, at most one next action.
+export function emptyState(title, body = '', {action = null, mark = false} = {}) {
+  return html`<div class="empty">
+    ${mark ? html`<img src="/assets/dori-mark.svg" alt="" width="56" height="56">` : ''}
+    <h2>${title}</h2>
+    ${body ? html`<p>${body}</p>` : ''}
+    ${action ? html`<button class="btn primary" type="button" data-action="${action.name}">${action.label}</button>` : ''}
+  </div>`;
+}
+
+// Placeholders shaped like the content they stand in for (DESIGN.md §9).
+export const skeletonRows = (count = 3) => html`<div class="skeleton-rows" role="status" aria-label="불러오는 중…">
+  ${Array.from({length: count}, () => html`<div class="skeleton-row"><span class="skeleton"></span><span class="skeleton short"></span><span class="skeleton short"></span></div>`)}
+</div>`;
+
+export const skeletonDetail = () => html`<div class="skeleton-rows" role="status" aria-label="불러오는 중…">
+  <span class="skeleton short"></span><span class="skeleton title"></span><span class="skeleton"></span><span class="skeleton"></span><span class="skeleton short"></span>
+</div>`;
 
 export const aiNote = text => html`<div class="ai-note">${text}</div>`;

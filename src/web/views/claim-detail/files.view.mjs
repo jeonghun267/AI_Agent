@@ -24,10 +24,10 @@ export function render(claim, {detail, session, ai}) {
       </div>
     </div>` : ''}
     ${uploadStatus(detail.upload)}
-    ${claim.files.length ? claim.files.map(file => html`<article class="file-card">
+    ${claim.files.length ? claim.files.map(file => html`<article class="item-card file-card">
       <div>
         <h3>${file.name}</h3>
-        <small>${fileSize(file.size)} · ${dateTime(file.createdAt)}${file.usedAsProof ? ' · 회수 기록의 증빙' : ''}</small>
+        <small class="case-caption"><span>${fileSize(file.size)}</span><span>${dateTime(file.createdAt)}</span>${file.usedAsProof ? html`<span>회수 기록의 증빙</span>` : ''}</small>
       </div>
       <div class="actions">
         <button class="btn small" type="button" data-action="open-file" data-file="${file.id}">${file.mime.startsWith('image/') ? '보기' : '다운로드'}</button>

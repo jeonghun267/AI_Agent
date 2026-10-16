@@ -20,10 +20,11 @@ function statusActions(claim) {
 
 export function render(claim) {
   const cur = claim.currency;
+  const editable = !claim.deleted && !['waived', 'completed'].includes(claim.state);
   return html`<div class="split">
     <div>
       <div class="section-title"><h2>주문과 청구</h2>
-        ${!claim.deleted ? html`<button class="btn small" type="button" data-action="edit-claim">정보·합의 수정</button>` : ''}</div>
+        ${editable ? html`<button class="btn small" type="button" data-action="edit-claim">정보·합의 수정</button>` : ''}</div>
       <dl class="fact-grid">
         <div><dt>판매처</dt><dd>${claim.vendorUrl ? html`<a href="${claim.vendorUrl}" target="_blank" rel="noopener noreferrer">${claim.vendor}</a>` : claim.vendor}</dd></div>
         <div><dt>주문번호</dt><dd>${claim.orderRef}</dd></div>

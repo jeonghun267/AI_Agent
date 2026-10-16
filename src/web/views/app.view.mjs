@@ -39,6 +39,9 @@ const DIALOGS = {
 
 const OVERLAYS = {'ai-consent': misc.renderAiConsent};
 
+// Longest dialog exit transition in components.css (mobile sheet: 200ms) plus margin.
+const CLOSE_ANIMATION_MS = 250;
+
 const dialogHandlers = {
   click: {
     'close-dialog': ({vms}) => {
@@ -51,7 +54,7 @@ const dialogHandlers = {
 
 // Every view module exports `handlers = {click, submit, input, change}`.
 // click keys are data-action names, submit keys are form ids, input/change keys are element ids.
-const HANDLERS = [shell, auth, dashboard, trash, settings, ...claimDetail.tabViews, claimForm, receiptForm, replyForm, draftDialogs, misc, {handlers: dialogHandlers}]
+const HANDLERS = [shell, auth, dashboard, trash, settings, claimDetail, ...claimDetail.tabViews, claimForm, receiptForm, replyForm, draftDialogs, misc, {handlers: dialogHandlers}]
   .reduce((all, view) => {
     for (const type of ['click', 'submit', 'input', 'change']) Object.assign(all[type], view.handlers?.[type]);
     return all;
@@ -94,7 +97,8 @@ export function mountApp({root, modal, overlay, toast}, vms) {
     if (previous?.type === 'image') URL.revokeObjectURL(previous.props.url);
     if (!current) {
       if (element.open) element.close();
-      element.innerHTML = '';
+      // Keep the content until the closing transition (DESIGN.md §8) has played.
+      setTimeout(() => { if (!element.open) element.innerHTML = ''; }, CLOSE_ANIMATION_MS);
       return;
     }
     element.innerHTML = dialogMarkup(renderers[current.type](current.props, s), closeAction);
@@ -109,7 +113,17 @@ export function mountApp({root, modal, overlay, toast}, vms) {
     else if (s.session.status !== 'signedIn') renderInto(root, s.app.route.name === 'signup' ? auth.renderSignup(s) : auth.renderLogin(s));
     else renderInto(root, shell.renderShell(s, PAGES[s.app.route.name]?.(s) ?? ''));
 
+    // Fade new content in only when the route (page or tab) changes, never on
+    // ordinary re-renders such as typing in the search box.
     const hash = routeHash(s.app.route);
+    const routeKey = `${s.session.status}:${hash}`;
+    if (routeKey !== shown.routeKey) {
+      shown.routeKey = routeKey;
+      root.querySelector('#main')?.classList.add('route-enter');
+      // On narrow screens the tab strip scrolls; keep the current tab visible.
+      root.querySelector('.tabs a.active')?.scrollIntoView({block: 'nearest', inline: 'center'});
+    }
+
     if (s.session.status !== 'loading' && location.hash !== hash) {
       const redirect = ['login', 'signup'].includes(s.app.route.name);
       history[redirect ? 'replaceState' : 'pushState'](null, '', hash);
@@ -135,12 +149,14 @@ export function mountApp({root, modal, overlay, toast}, vms) {
     event.preventDefault();
     if (el.disabled) return;
     el.disabled = true;
+    el.setAttribute('aria-busy', 'true');
     try {
       await handler({el, event, vms});
     } catch (error) {
       showError(el.closest('form'), error, vms);
     } finally {
-      if (el.isConnected) el.disabled = false;
+      el.disabled = false;
+      el.removeAttribute('aria-busy');
     }
   });
 
@@ -152,6 +168,7 @@ export function mountApp({root, modal, overlay, toast}, vms) {
     if (form.dataset.saving) return;
     form.dataset.saving = 'true';
     const submit = form.querySelector('[type="submit"]');
+    submit?.setAttribute('aria-busy', 'true');
     if (submit) submit.disabled = true;
     const error = form.querySelector('.error');
     if (error) error.textContent = '';
@@ -159,9 +176,13 @@ export function mountApp({root, modal, overlay, toast}, vms) {
       await handler({form, values: formValues(form), vms, event});
     } catch (failure) {
       showError(form, failure, vms);
+      form.querySelector(':user-invalid, [aria-invalid="true"]')?.focus();
     } finally {
       delete form.dataset.saving;
-      if (submit?.isConnected) submit.disabled = false;
+      if (submit) {
+        submit.disabled = false;
+        submit.removeAttribute('aria-busy');
+      }
     }
   });
 
