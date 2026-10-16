@@ -11,7 +11,7 @@ export function progressSteps(claim) {
     <ol class="steps${flag === 'waived' ? ' is-stopped' : ''}" aria-label="진행 단계">
       ${steps.map((step, index) => html`<li class="step ${step.status}${step.status === 'current' && flag ? ` is-${flag}` : ''}" ${step.status === 'current' ? html`aria-current="step"` : ''}>
         <span class="step-dot">${step.status === 'done' ? CHECK : index + 1}</span>
-        <span class="step-label">${step.label}${step.status === 'current' && flag === 'disputed' ? ' (분쟁)' : ''}</span>
+        <span class="step-label">${step.label}${step.status === 'current' && flag === 'disputed' ? html`<span class="step-flag"> (분쟁)</span>` : ''}</span>
       </li>`)}
     </ol>
     ${flag === 'waived' ? html`<p class="steps-note">포기로 기록된 건이에요. 다시 진행하려면 사유를 남기고 재개하세요.</p>` : ''}
