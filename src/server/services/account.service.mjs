@@ -17,7 +17,7 @@ export function createAccountService(ctx) {
     return {
       format: 'relo-export-v1',
       exportedAt: nowIso(),
-      user: {email: user.email, name: user.name, createdAt: user.createdAt, aiConsentAt: user.aiConsentAt},
+      user: {email: user.email, name: user.name, createdAt: user.createdAt, emailVerifiedAt: user.emailVerifiedAt, aiConsentAt: user.aiConsentAt},
       claims: repos.claims.listAllRows(ownerId).map(row => claims.toView(ownerId, row)),
       files: repos.files.listAllWithBytes(ownerId).map(({bytes, ...meta}) => ({...meta, base64: bytes.toString('base64')})),
     };

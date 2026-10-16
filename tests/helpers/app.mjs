@@ -12,17 +12,34 @@ export const PASSWORD = 'Correct-Horse-2026';
 export const key = () => randomUUID();
 const silent = {error() {}, log() {}};
 
+// A mail provider that keeps every message, so tests can follow the one-time links.
+export function createOutbox() {
+  const messages = [];
+  return {
+    name: 'outbox',
+    enabled: true,
+    messages,
+    async send(message) { messages.push(message); },
+    // Token from the newest verify|reset link sent to this address, or null.
+    token(to, kind) {
+      const message = messages.findLast(m => m.to === to && m.text.includes(`/#/${kind}/`));
+      return message?.text.match(new RegExp(`/#/${kind}/([\\w-]+)`))[1] ?? null;
+    },
+    count: (to, kind) => messages.filter(m => m.to === to && m.text.includes(`/#/${kind}/`)).length,
+  };
+}
+
 // Starts the real app on a random loopback port with a throwaway database.
-export async function startApp(t, {env = {}, aiProvider = createFakeProvider()} = {}) {
+export async function startApp(t, {env = {}, aiProvider = createFakeProvider(), mail = createOutbox()} = {}) {
   const dir = await mkdtemp(join(tmpdir(), 'relo-http-'));
   const config = loadConfig({APP_ENV: 'test', PORT: '0', DATA_DIR: dir, AI_PROVIDER: 'fake', ...env});
-  const app = createApp(config, {aiProvider, logger: silent});
+  const app = createApp(config, {aiProvider, mailProvider: mail, logger: silent});
   const base = await app.listen(0, '127.0.0.1');
   t.after(async () => {
     await app.close();
     await rm(dir, {recursive: true, force: true});
   });
-  return {app, base, aiProvider, client: () => createClient(base)};
+  return {app, base, aiProvider, mail, client: () => createClient(base)};
 }
 
 // A browser-like client: keeps the session cookie and CSRF token, sends Origin.

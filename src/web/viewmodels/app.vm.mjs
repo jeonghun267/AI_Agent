@@ -1,6 +1,9 @@
 import {Observable} from '../core/observable.mjs';
 
-const PUBLIC_ROUTES = ['login', 'signup'];
+const PUBLIC_ROUTES = ['login', 'signup', 'forgot', 'reset'];
+// Also open while signed in: the emailed link proves the mailbox, and a reset
+// ends this browser's session anyway.
+const OPEN_ROUTES = ['reset'];
 
 // Top-level UI state: current route, open dialogs, toast, connectivity.
 // It also decides which data to load when the route changes.
@@ -25,13 +28,15 @@ export class AppViewModel extends Observable {
   }
 
   async setRoute(route) {
+    if (route.name === 'verify') return this.#verifyEmail(route.token);
     const previous = this.state.route;
     const signedIn = this.session.state.status === 'signedIn';
     if (!signedIn && !PUBLIC_ROUTES.includes(route.name)) {
       if (route.name !== 'dashboard') this.#returnTo = route;
       route = {name: 'login'};
     }
-    if (signedIn && PUBLIC_ROUTES.includes(route.name)) route = {name: 'dashboard'};
+    if (signedIn && PUBLIC_ROUTES.includes(route.name) && !OPEN_ROUTES.includes(route.name)) route = {name: 'dashboard'};
+    if (route.name === 'forgot' && previous.name !== 'forgot') this.session.clearResetRequest();
     this.setState({route});
     if (!signedIn) return;
     if (route.name === 'dashboard') await this.list.load({deleted: false});
@@ -41,6 +46,25 @@ export class AppViewModel extends Observable {
       if (sameClaim) this.detail.setTab(route.tab);
       else await this.detail.open(route.id, route.tab);
     }
+  }
+
+  // A verification link is an action, not a page: confirm, say so, move on.
+  async #verifyEmail(token) {
+    const signedIn = this.session.state.status === 'signedIn';
+    try {
+      await this.session.verifyEmail(token);
+      this.notify(signedIn ? '이메일 인증을 마쳤어요.' : '이메일 인증을 마쳤어요. 로그인해 주세요.');
+    } catch (error) {
+      this.notify(error.message);
+    }
+    return this.setRoute({name: signedIn ? 'dashboard' : 'login'});
+  }
+
+  // From the #/reset/:token screen. Everyone signs in again afterwards.
+  async resetPassword(password) {
+    await this.session.resetPassword(this.state.route.token, password);
+    this.notify('비밀번호를 바꿨어요. 새 비밀번호로 로그인하세요.');
+    return this.setRoute({name: 'login'});
   }
 
   // Programmatic navigation; the view mirrors state.route into location.hash.

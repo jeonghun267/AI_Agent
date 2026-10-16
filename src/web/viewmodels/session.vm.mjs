@@ -1,9 +1,14 @@
 import {Observable} from '../core/observable.mjs';
 
+// The band asking to confirm the address shows only when mail can actually be sent.
+export const selectNeedsEmailVerification = session =>
+  session.status === 'signedIn' && !session.user?.emailVerifiedAt && !!session.config?.mail?.enabled;
+
 // Who is signed in, the server's reference data (/api/config) and AI status.
+//   resetRequest - {email} after a password-reset link was requested on this screen
 export class SessionViewModel extends Observable {
   constructor({models, http}) {
-    super({status: 'loading', user: null, config: null, ai: {enabled: false, consented: false, model: null}, expired: false});
+    super({status: 'loading', user: null, config: null, ai: {enabled: false, consented: false, model: null}, expired: false, resetRequest: null});
     this.models = models;
     this.http = http;
     this.onSignedIn = () => {};
@@ -56,6 +61,35 @@ export class SessionViewModel extends Observable {
     this.http.setCsrf('');
     this.setState({status: 'signedOut', user: null, expired, ai: {...this.state.ai, consented: false}});
     this.onSignedOut();
+  }
+
+  // Works signed in or out; when signed in, reloads the user so the band disappears.
+  async verifyEmail(token) {
+    await this.models.auth.verifyEmail(token);
+    if (this.state.status === 'signedIn') await this.#loadMe();
+  }
+
+  // Returns false when the address turned out to be verified already.
+  async resendVerification() {
+    const {sent} = await this.models.auth.resendVerification();
+    if (!sent) await this.#loadMe();
+    return sent;
+  }
+
+  async requestPasswordReset(email) {
+    await this.models.auth.forgotPassword(email);
+    this.setState({resetRequest: {email}});
+  }
+
+  clearResetRequest() {
+    if (this.state.resetRequest) this.setState({resetRequest: null});
+  }
+
+  // The server ends every session of that account and this browser's own one.
+  async resetPassword(token, password) {
+    await this.models.auth.resetPassword(token, password);
+    this.setState({resetRequest: null});
+    if (this.state.status === 'signedIn') this.forgetUser();
   }
 
   async setAiConsent(consent) {

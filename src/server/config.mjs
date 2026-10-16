@@ -3,6 +3,8 @@ import {resolve} from 'node:path';
 const ROOT = resolve(import.meta.dirname, '..', '..');
 const ENVIRONMENTS = ['development', 'test', 'production'];
 const AI_PROVIDERS = ['gemini', 'disabled', 'fake'];
+// Only 'console' (development and tests) exists until a real mail service is chosen.
+const MAIL_PROVIDERS = ['console', 'disabled'];
 // Google's recommended cost-efficient model for new projects (checked 2026-10).
 // Set GEMINI_MODEL=gemini-3.8-flash for higher quality at higher cost.
 export const DEFAULT_GEMINI_MODEL = 'gemini-3.5-flash-lite';
@@ -31,6 +33,10 @@ export function loadConfig(env = process.env) {
   if (provider === 'fake' && isProduction) throw new Error('AI_PROVIDER=fake is for tests only.');
   if (provider === 'gemini' && !apiKey) throw new Error('AI_PROVIDER=gemini needs GEMINI_API_KEY.');
 
+  const mailProvider = env.MAIL_PROVIDER || (isProduction ? 'disabled' : 'console');
+  if (!MAIL_PROVIDERS.includes(mailProvider)) throw new Error(`MAIL_PROVIDER must be one of: ${MAIL_PROVIDERS.join(', ')}.`);
+  if (mailProvider === 'console' && isProduction) throw new Error('MAIL_PROVIDER=console prints one-time links to the log; it is for development and tests only.');
+
   return Object.freeze({
     root: ROOT,
     webRoot: resolve(ROOT, 'src', 'web'),
@@ -42,6 +48,9 @@ export function loadConfig(env = process.env) {
     dataDir: resolve(ROOT, env.DATA_DIR || '.relo-data'),
     seedDemo: env.SEED_DEMO ? env.SEED_DEMO === '1' : appEnv === 'development',
     sessionTtlSeconds: integer(env.SESSION_TTL_SECONDS, 7 * 24 * 60 * 60, 'SESSION_TTL_SECONDS'),
+    verifyTokenTtlSeconds: integer(env.EMAIL_VERIFY_TTL_SECONDS, 24 * 60 * 60, 'EMAIL_VERIFY_TTL_SECONDS'),
+    resetTokenTtlSeconds: integer(env.PASSWORD_RESET_TTL_SECONDS, 30 * 60, 'PASSWORD_RESET_TTL_SECONDS'),
+    mail: Object.freeze({provider: mailProvider}),
     ai: Object.freeze({
       provider,
       apiKey,

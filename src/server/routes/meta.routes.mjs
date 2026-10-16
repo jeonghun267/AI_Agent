@@ -19,6 +19,7 @@ export function registerMetaRoutes(router, {config, services}) {
       deadlineZones: DEADLINE_ZONES,
       files: {types: ALLOWED_FILE_TYPES, maxBytes: MAX_FILE_BYTES},
       ai: services.ai.status(),
+      mail: services.auth.mailStatus(),
       ...(config.seedDemo ? {demoAccount: DEMO_ACCOUNT} : {}),
     },
   }), {auth: false});

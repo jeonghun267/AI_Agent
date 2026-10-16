@@ -18,6 +18,10 @@ export function createSessionRepository(db) {
       db.prepare('DELETE FROM sessions WHERE token_hash = ?').run(tokenHash);
     },
 
+    deleteForUser(userId) {
+      db.prepare('DELETE FROM sessions WHERE user_id = ?').run(userId);
+    },
+
     deleteExpired(nowMs) {
       db.prepare('DELETE FROM sessions WHERE expires_at <= ?').run(nowMs);
     },

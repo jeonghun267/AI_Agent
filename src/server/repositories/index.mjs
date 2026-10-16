@@ -1,5 +1,6 @@
 import {createUserRepository} from './user.repo.mjs';
 import {createSessionRepository} from './session.repo.mjs';
+import {createEmailTokenRepository} from './email-token.repo.mjs';
 import {createClaimRepository} from './claim.repo.mjs';
 import {createFileRepository} from './file.repo.mjs';
 import {createLedgerRepository} from './ledger.repo.mjs';
@@ -13,6 +14,7 @@ export function createRepositories(db) {
   return {
     users: createUserRepository(db),
     sessions: createSessionRepository(db),
+    emailTokens: createEmailTokenRepository(db),
     claims: createClaimRepository(db),
     files: createFileRepository(db),
     ledger: createLedgerRepository(db),

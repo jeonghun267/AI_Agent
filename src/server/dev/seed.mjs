@@ -7,6 +7,8 @@ export const DEMO_ACCOUNT = Object.freeze({email: 'demo@relo.test', password: 'D
 export async function seedDemo({services, repos}) {
   if (repos.users.existsByEmail(DEMO_ACCOUNT.email)) return;
   const user = await services.auth.register(DEMO_ACCOUNT);
+  // relo.test cannot receive mail, so the demo address is marked verified.
+  repos.users.markEmailVerified(user.id, user.createdAt);
   const claim = services.claims.create(user.id, {
     title: 'USB-C 허브 7-in-1',
     vendor: 'Example Gadgets EU',

@@ -1,5 +1,6 @@
 import {html, raw} from '../core/html.mjs';
 import {brand} from './pages/auth.view.mjs';
+import {selectNeedsEmailVerification} from '../viewmodels/session.vm.mjs';
 
 // Outline icons for the mobile bottom tab bar (decorative; the label carries meaning).
 const ICON = {
@@ -16,6 +17,10 @@ export function renderShell({app, session}, page) {
   const current = app.route.name === 'claim' ? 'dashboard' : app.route.name;
   return html`
     ${app.offline ? html`<div class="offline" role="status">인터넷 연결이 끊겼어요. 서버에 저장된 것을 확인하기 전에는 완료로 표시하지 않아요.</div>` : ''}
+    ${selectNeedsEmailVerification(session) ? html`<aside class="verify-band" aria-label="이메일 인증"><div class="verify-band-inner">
+      <p><strong>이메일 인증이 필요해요.</strong> ${session.user.email} 주소로 보낸 링크를 열어 주세요.</p>
+      <button class="btn small" type="button" data-action="resend-verification">인증 메일 다시 받기</button>
+    </div></aside>` : ''}
     <div class="shell">
       <header class="topbar"><div class="topbar-inner">
         ${brand()}
@@ -35,5 +40,9 @@ export function renderShell({app, session}, page) {
 export const handlers = {
   click: {
     logout: ({vms}) => vms.session.logout(),
+    'resend-verification': async ({vms}) => {
+      const sent = await vms.session.resendVerification();
+      vms.app.notify(sent ? '인증 메일을 다시 보냈어요. 메일함을 확인하세요.' : '이미 인증된 이메일이에요.');
+    },
   },
 };

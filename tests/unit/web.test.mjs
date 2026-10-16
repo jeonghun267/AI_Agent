@@ -3,10 +3,11 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {html, toMarkup, raw} from '../../src/web/core/html.mjs';
 import {money, decimal, currencyDigits} from '../../src/web/core/format.mjs';
-import {parseHash, routeHash} from '../../src/web/core/hash-router.mjs';
+import {parseHash, routeHash, isLinkHash} from '../../src/web/core/hash-router.mjs';
 import {createPreparationController} from '../../src/web/core/preparation.mjs';
 import {Observable} from '../../src/web/core/observable.mjs';
 import {selectMetrics, selectVisibleClaims} from '../../src/web/viewmodels/claim-list.vm.mjs';
+import {selectNeedsEmailVerification} from '../../src/web/viewmodels/session.vm.mjs';
 
 test('html templates escape values unless they are templates themselves', () => {
   const name = '<img src=x onerror=alert(1)>';
@@ -24,11 +25,23 @@ test('money uses each currency\'s own decimals', () => {
 });
 
 test('hash routes round-trip', () => {
-  for (const hash of ['#/', '#/trash', '#/settings', '#/claims/abc-123', '#/claims/abc-123/files']) {
+  for (const hash of ['#/', '#/trash', '#/settings', '#/forgot', '#/claims/abc-123', '#/claims/abc-123/files', '#/reset/Ab_c-1', '#/verify/Xy-9_z']) {
     assert.equal(routeHash(parseHash(hash)), hash);
   }
   assert.deepEqual(parseHash('#/claims/x'), {name: 'claim', id: 'x', tab: 'overview'});
   assert.deepEqual(parseHash('#/unknown'), {name: 'dashboard'});
+  assert.deepEqual(parseHash('#/reset/tok'), {name: 'reset', token: 'tok'});
+  assert.deepEqual(parseHash('#/reset'), {name: 'dashboard'}, 'a reset link without its token is not a reset screen');
+  assert.equal(isLinkHash('#/verify/tok'), true);
+  assert.equal(isLinkHash('#/settings'), false);
+});
+
+test('the verification band shows only for signed-in, unverified users when mail works', () => {
+  const base = {status: 'signedIn', user: {emailVerifiedAt: null}, config: {mail: {enabled: true}}};
+  assert.equal(selectNeedsEmailVerification(base), true);
+  assert.equal(selectNeedsEmailVerification({...base, user: {emailVerifiedAt: '2026-10-17T00:00:00Z'}}), false);
+  assert.equal(selectNeedsEmailVerification({...base, config: {mail: {enabled: false}}}), false);
+  assert.equal(selectNeedsEmailVerification({...base, status: 'signedOut', user: null}), false);
 });
 
 test('dashboard metrics never add different currencies together', () => {

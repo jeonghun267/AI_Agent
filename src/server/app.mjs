@@ -3,6 +3,7 @@ import {openDatabase} from './repositories/db.mjs';
 import {createRepositories} from './repositories/index.mjs';
 import {createServices} from './services/index.mjs';
 import {createAiProvider} from './ai/provider.mjs';
+import {createMailProvider} from './mail/provider.mjs';
 import {createRouter} from './http/router.mjs';
 import {registerRoutes} from './routes/index.mjs';
 import {createRateLimiter} from './http/rate-limit.mjs';
@@ -15,14 +16,21 @@ import {newId} from './domain/primitives.mjs';
 import {seedDemo} from './dev/seed.mjs';
 
 // The one place where everything is wired together. Tests call createApp with
-// a test config and, optionally, a fake AI provider.
-export function createApp(config, {aiProvider = createAiProvider(config.ai), logger = console} = {}) {
+// a test config and, optionally, a fake AI provider and a mail outbox.
+export function createApp(config, {aiProvider = createAiProvider(config.ai), mailProvider, logger = console} = {}) {
   const db = openDatabase(config.dataDir);
   const repos = createRepositories(db);
-  const services = createServices({db, repos, config, aiProvider});
+  const mail = mailProvider ?? createMailProvider(config.mail, {logger});
+  const services = createServices({db, repos, config, aiProvider, mailProvider: mail, logger});
   const limits = {
     login: createRateLimiter({limit: 8, windowMs: 5 * 60 * 1000}),
     signup: createRateLimiter({limit: 10, windowMs: 60 * 60 * 1000}),
+    // Password-reset requests: per address (mail bombing) and per client.
+    resetEmail: createRateLimiter({limit: 3, windowMs: 60 * 60 * 1000}),
+    resetClient: createRateLimiter({limit: 10, windowMs: 60 * 60 * 1000}),
+    resendVerification: createRateLimiter({limit: 3, windowMs: 60 * 60 * 1000}),
+    // Opening one-time links (verify, reset).
+    links: createRateLimiter({limit: 20, windowMs: 15 * 60 * 1000}),
   };
   const router = createRouter();
   registerRoutes(router, {services, config, limits});
@@ -30,7 +38,7 @@ export function createApp(config, {aiProvider = createAiProvider(config.ai), log
 
   let hosts = allowedHosts(config, config.port);
   const server = http.createServer((req, res) => handle(req, res));
-  const sessionSweep = setInterval(() => services.auth.cleanupExpiredSessions(), 60 * 60 * 1000);
+  const sessionSweep = setInterval(() => services.auth.cleanupExpired(), 60 * 60 * 1000);
   sessionSweep.unref();
 
   async function handle(req, res) {
