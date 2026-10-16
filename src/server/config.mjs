@@ -3,7 +3,9 @@ import {resolve} from 'node:path';
 const ROOT = resolve(import.meta.dirname, '..', '..');
 const ENVIRONMENTS = ['development', 'test', 'production'];
 const AI_PROVIDERS = ['gemini', 'disabled', 'fake'];
-export const DEFAULT_GEMINI_MODEL = 'gemini-2.5-flash';
+// Google's recommended cost-efficient model for new projects (checked 2026-10).
+// Set GEMINI_MODEL=gemini-3.8-flash for higher quality at higher cost.
+export const DEFAULT_GEMINI_MODEL = 'gemini-3.5-flash-lite';
 
 function integer(value, fallback, name) {
   if (value === undefined || value === '') return fallback;
@@ -39,7 +41,7 @@ export function loadConfig(env = process.env) {
     appOrigin,
     dataDir: resolve(ROOT, env.DATA_DIR || '.relo-data'),
     seedDemo: env.SEED_DEMO ? env.SEED_DEMO === '1' : appEnv === 'development',
-    sessionDays: integer(env.SESSION_DAYS, 7, 'SESSION_DAYS'),
+    sessionTtlSeconds: integer(env.SESSION_TTL_SECONDS, 7 * 24 * 60 * 60, 'SESSION_TTL_SECONDS'),
     ai: Object.freeze({
       provider,
       apiKey,
