@@ -44,6 +44,7 @@ const DIALOGS = {
   confirm: misc.renderConfirm,
   image: misc.renderImage,
   extraction: misc.renderExtraction,
+  celebrate: misc.renderCelebrate,
   'delete-account': () => ({title: '회원 탈퇴', body: settings.renderDeleteAccountDialog()}),
 };
 

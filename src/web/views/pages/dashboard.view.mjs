@@ -2,6 +2,7 @@ import {html} from '../../core/html.mjs';
 import {money} from '../../core/format.mjs';
 import {selectVisibleClaims, selectMetrics} from '../../viewmodels/claim-list.vm.mjs';
 import {statePill, emptyState, skeletonRows} from '../components/ui.view.mjs';
+import {recoveryMeter, recoveryShort} from '../components/progress.view.mjs';
 
 // The one number the user cares about most leads the page (DESIGN.md §1).
 function summary(list) {
@@ -22,14 +23,14 @@ function summary(list) {
 
 export function claimTable(claims, labels, {trash = false} = {}) {
   return html`<table class="claims-table">
-    <thead><tr><th>상품</th><th>상태</th><th class="money-head">청구액</th><th class="money-head">합의액</th><th class="money-head">받은 금액</th>${trash ? html`<th><span class="visually-hidden">복원</span></th>` : ''}</tr></thead>
+    <thead><tr><th>상품</th><th>상태</th><th class="money-head">청구액</th><th class="money-head">합의액</th><th class="money-head">실제 회수</th>${trash ? html`<th><span class="visually-hidden">복원</span></th>` : ''}</tr></thead>
     <tbody>${claims.map(claim => html`<tr>
       <td><a class="case-name" href="#/claims/${claim.id}">${claim.title}</a>
         <span class="case-caption"><span>${claim.vendor}</span><span>주문 ${claim.orderRef}</span><span>${labels.claimKinds[claim.kind]}</span></span></td>
       <td data-label="상태">${statePill(claim.state, labels.states)}</td>
       <td class="money-cell" data-label="청구액">${money(claim.claimed, claim.currency)}</td>
       <td class="money-cell" data-label="합의액">${claim.agreed === null ? '미합의' : money(claim.agreed, claim.currency)}</td>
-      <td class="money-cell positive" data-label="받은 금액">${money(claim.summary.cash, claim.currency)}</td>
+      <td class="money-cell positive recovery-cell" data-label="실제 회수"><span>${recoveryShort(claim)}</span>${recoveryMeter(claim, {compact: true})}</td>
       ${trash ? html`<td><button class="btn small" type="button" data-action="restore-claim" data-id="${claim.id}">복원</button></td>` : ''}
     </tr>`)}</tbody>
   </table>`;
@@ -47,7 +48,7 @@ export function renderDashboard({list, session}) {
   if (!list.claims.length) {
     return html`${heading}<section class="panel">${emptyState('아직 등록한 클레임이 없어요',
       '해외에서 산 상품이 고장 났거나 다른 물건이 왔다면, 주문 정보부터 기록해 보세요.',
-      {mark: true, action: {name: 'new-claim', label: '첫 클레임 만들기'}})}</section>`;
+      {dori: true, action: {name: 'new-claim', label: '첫 클레임 만들기'}})}</section>`;
   }
 
   const visible = selectVisibleClaims(list);

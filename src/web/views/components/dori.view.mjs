@@ -38,7 +38,25 @@ const DORI_SVG = `<svg class="dori-character" xmlns="http://www.w3.org/2000/svg"
       </g>
       <path class="dori-wing" d="M149 121c7-5 16 2 19 14 3 11-1 20-7 20-7 1-8-12-15-20" fill="#254459" stroke="#193548" stroke-width="3" stroke-linecap="round"/>
     </g>
+    <g class="dori-confetti" aria-hidden="true">
+      <rect x="54" y="30" width="8" height="4" rx="1" fill="#30b8ac" transform="rotate(-25 58 32)"/>
+      <rect x="160" y="22" width="8" height="4" rx="1" fill="#f5ad50" transform="rotate(30 164 24)"/>
+      <circle cx="84" cy="16" r="3" fill="#9b83be"/>
+      <circle cx="140" cy="10" r="3" fill="#30b8ac"/>
+      <rect x="186" y="56" width="8" height="4" rx="1" fill="#9b83be" transform="rotate(-15 190 58)"/>
+      <rect x="34" y="70" width="8" height="4" rx="1" fill="#f5ad50" transform="rotate(20 38 72)"/>
+      <circle cx="112" cy="4" r="2.5" fill="#f5ad50"/>
+    </g>
   </svg>`;
+
+// Dori in a fixed pose (DESIGN.md §8):
+//   still       - standing, no motion (empty states)
+//   waving      - waves twice when the screen opens (sign-in screens, first empty dashboard)
+//   celebrating - hops twice with confetti, once (all money or goods recovered)
+// size: 'sm' (88px), 'md' (120px) or 'lg' (180px). Decorative: hidden from screen readers.
+export function doriFigure({pose = 'still', size = 'md'} = {}) {
+  return html`<div class="dori-figure-wrap is-${pose} dori-${size}" aria-hidden="true">${raw(DORI_SVG)}</div>`;
+}
 
 export function doriPreparing({kindLabel, useAi, still}) {
   return html`<section class="dori-loading dori-work" role="status" aria-live="polite" aria-atomic="true">

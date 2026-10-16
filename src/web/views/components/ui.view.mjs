@@ -1,4 +1,5 @@
 import {html, raw} from '../../core/html.mjs';
+import {doriFigure} from './dori.view.mjs';
 
 // Small building blocks shared by pages and dialogs. Pure: state in, HTML out.
 // `attrs` is trusted markup written by our own views (min, max, inputmode).
@@ -43,9 +44,10 @@ export const formActions = (submitLabel = '저장', {cancelLabel = '취소', dan
   </div>`;
 
 // Centred in its panel: title, one sentence, at most one next action.
-export function emptyState(title, body = '', {action = null, mark = false} = {}) {
+// dori: show Dori standing with a document (still pose, no motion).
+export function emptyState(title, body = '', {action = null, dori = false} = {}) {
   return html`<div class="empty">
-    ${mark ? html`<img src="/assets/dori-mark.svg" alt="" width="56" height="56">` : ''}
+    ${dori ? doriFigure({pose: 'still', size: dori === 'sm' ? 'sm' : 'md'}) : ''}
     <h2>${title}</h2>
     ${body ? html`<p>${body}</p>` : ''}
     ${action ? html`<button class="btn primary" type="button" data-action="${action.name}">${action.label}</button>` : ''}

@@ -98,6 +98,21 @@ test('sign up, record a claim with AI help and a receipt, then use it on a phone
   await page.locator('.detail-title .pill').waitFor();
   assert.equal(page.url(), ledgerUrl, 'reload keeps the same claim tab');
   assert.equal(await pill(), '부분 회수');
+  // Progress line and meter: 회수 is the current step, €20.00 of €39.90 is 50%.
+  assert.equal(await page.locator('.step[aria-current="step"] .step-label').textContent(), '회수');
+  assert.equal(await page.locator('.progress-card .meter-percent').textContent(), '50%');
+
+  // Receiving the rest celebrates once with Dori.
+  await page.click('[data-action="record-receipt"]');
+  await page.fill('#field-amount', '19.90');
+  await page.fill('#field-transactionRef', 'BANK-BROWSER-2');
+  await page.check('#receipt-form [name="confirmed"]');
+  await page.click('#receipt-form [type="submit"]');
+  await page.getByRole('heading', {name: '합의한 금액을 모두 돌려받았어요'}).waitFor();
+  assert.equal(await page.locator('#modal .dori-figure-wrap.is-celebrating').count(), 1);
+  await page.getByRole('button', {name: '좋아요'}).click();
+  await page.waitForFunction(() => !document.querySelector('#modal').open);
+  assert.equal(await page.locator('.progress-card .meter-percent').textContent(), '100%');
 
   // Phone: no sideways scrolling, bottom tab bar, dialogs open as bottom sheets.
   await page.setViewportSize({width: 375, height: 812});

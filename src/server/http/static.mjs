@@ -8,7 +8,12 @@ const MIME = {
   '.css': 'text/css; charset=utf-8',
   '.svg': 'image/svg+xml',
   '.png': 'image/png',
+  '.woff2': 'font/woff2',
 };
+
+// Font files carry their version in the name (PretendardVariable-1.3.9.woff2),
+// so browsers may keep them for a year. Everything else stays no-store.
+const LONG_CACHE = 'public, max-age=31536000, immutable';
 
 // Serves files under src/web. Unknown extensions and paths outside the root are 404.
 export async function serveStatic(req, res, path, webRoot, headers) {
@@ -17,6 +22,7 @@ export async function serveStatic(req, res, path, webRoot, headers) {
   const filename = resolve(webRoot, '.' + relative);
   reject(!filename.startsWith(webRoot + sep) || !MIME[extname(filename)], '파일을 찾을 수 없습니다.', 'not_found', 404);
   const bytes = await readFile(filename);
-  res.writeHead(200, {...headers, 'Content-Type': MIME[extname(filename)]});
+  const cache = extname(filename) === '.woff2' ? {'Cache-Control': LONG_CACHE} : {};
+  res.writeHead(200, {...headers, ...cache, 'Content-Type': MIME[extname(filename)]});
   res.end(req.method === 'HEAD' ? undefined : bytes);
 }

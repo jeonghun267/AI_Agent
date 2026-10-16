@@ -23,6 +23,38 @@
 .is-still .dori-document { opacity: 1; transform: translate(23px, -35px) rotate(9deg); }
 .is-still .dori-wing { transform: rotate(-23deg); }
 
+/* Poses outside the draft dialog (DESIGN.md §8). Sizes: sm 88px, md 120px, lg 180px. */
+.dori-figure-wrap { line-height: 0; margin-inline: auto; }
+.dori-figure-wrap .dori-character { width: 100%; height: auto; }
+.dori-sm { width: 88px; }
+.dori-md { width: 120px; }
+.dori-lg { width: 180px; }
+.dori-confetti { opacity: 0; transform-box: view-box; transform-origin: 112px 40px; }
+/* Waving plays only when the screen opens (#main gets .route-enter once per route). */
+.route-enter .is-waving .dori-wing { animation: dori-wave 1.2s ease-in-out 2; }
+.is-celebrating .dori-wing { transform: rotate(-70deg); }
+.is-celebrating .dori-figure { animation: dori-hop 600ms cubic-bezier(.22, .61, .36, 1) 2; }
+.is-celebrating .dori-confetti { animation: dori-confetti 1.4s ease-out 1 forwards; }
+@keyframes dori-wave { 0%, 100% { transform: rotate(0); } 25%, 75% { transform: rotate(-62deg); } 50% { transform: rotate(-38deg); } }
+@keyframes dori-hop { 0%, 100% { transform: translateY(0); } 45% { transform: translateY(-12px); } }
+@keyframes dori-confetti {
+  0% { opacity: 0; transform: translateY(14px) scale(.6); }
+  25% { opacity: 1; transform: translateY(0) scale(1); }
+  80% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(-10px) scale(1.05); }
+}
+
+/* Sign-in: Dori stands on the top edge of the centred card. */
+.auth-page { position: relative; margin-top: 76px; }
+.auth-dori { position: absolute; top: -80px; left: 50%; transform: translateX(-50%); }
+
+/* Celebration dialog: everything centred. */
+.celebrate { display: grid; justify-items: center; gap: var(--space-3); padding: var(--space-2) 0 var(--space-2); text-align: center; }
+.celebrate h3 { margin: var(--space-2) 0 0; font-size: var(--text-2xl); }
+.celebrate p { color: var(--muted); max-width: 36ch; }
+.celebrate-amount { font-size: 34px; font-weight: 800; letter-spacing: -.03em; color: var(--positive); font-variant-numeric: tabular-nums; }
+.celebrate .btn { margin-top: var(--space-3); min-width: 160px; }
+
 @keyframes dori-breathe { 0%, 100% { transform: translateY(0) rotate(-.7deg); } 50% { transform: translateY(-2px) rotate(.7deg); } }
 @keyframes dori-sort {
   0%, 8% { opacity: 0; transform: translate(0, 22px) rotate(0); }
@@ -42,6 +74,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .is-celebrating .dori-confetti { animation: none !important; opacity: 1; }
   .is-sorting .dori-figure, .is-sorting .dori-document, .is-sorting .dori-wing, .is-sorting .dori-bag-flap, .is-sorting .dori-eyes { animation: none !important; }
   .is-sorting .dori-document { opacity: 1; transform: translate(23px, -35px) rotate(9deg); }
   .is-sorting .dori-wing { transform: rotate(-23deg); }
