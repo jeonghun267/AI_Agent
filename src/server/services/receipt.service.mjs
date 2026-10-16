@@ -1,4 +1,4 @@
-import {reject, notFound} from '../domain/errors.mjs';
+import {reject, AppError, forField} from '../domain/errors.mjs';
 import {newId, nowIso} from '../domain/primitives.mjs';
 import {totals, stateAfterReceipt} from '../domain/claim.mjs';
 import {parseReceipt} from '../domain/receipt.mjs';
@@ -16,14 +16,14 @@ export function createReceiptService(ctx) {
       claims.expectVersion(row, version);
       claims.requireOpen(row);
       const proof = repos.files.findWithBytes(ownerId, input.proofId);
-      if (!proof || proof.claimId !== claimId) throw notFound('이 건의 증빙 파일을 선택하세요.');
+      if (!proof || proof.claimId !== claimId) throw new AppError(404, 'not_found', '이 건의 증빙 파일을 선택하세요.', 'proofId');
 
       const ledger = repos.ledger.listForClaim(ownerId, claimId);
       const summary = totals(row.payload, ledger);
       const entry = parseReceipt(row.payload, summary, ledger, input);
       if (entry.kind === 'cash' && entry.transactionRef) {
-        reject(repos.ledger.findCashByRef(ownerId, entry.transactionRef),
-          '이미 기록한 거래입니다. 같은 입금을 두 번 셀 수 없어요.', 'duplicate_transaction', 409);
+        forField('transactionRef', () => reject(repos.ledger.findCashByRef(ownerId, entry.transactionRef),
+          '이미 기록한 거래예요. 같은 입금을 두 번 셀 수 없어요.', 'duplicate_transaction', 409));
       }
 
       const receiptId = newId();

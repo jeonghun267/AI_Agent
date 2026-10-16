@@ -1,5 +1,5 @@
 import {transaction} from '../repositories/db.mjs';
-import {reject, notFound} from '../domain/errors.mjs';
+import {reject, notFound, forField} from '../domain/errors.mjs';
 import {newId, nowIso} from '../domain/primitives.mjs';
 import {cleanText} from '../domain/validation.mjs';
 import {
@@ -102,17 +102,18 @@ export function createClaimService(ctx) {
     return mutate(ownerId, claimId, version, '사건 정보 수정', payload => {
       const ledger = repos.ledger.listForClaim(ownerId, claimId);
       const summary = totals(payload, ledger);
-      reject(summary.cash > (data.agreed ?? data.claimed), '이미 받은 금액보다 낮게 합의액·청구액을 바꿀 수 없습니다.');
+      forField(data.agreed === null ? 'claimedAmount' : 'agreedAmount', () =>
+        reject(summary.cash > (data.agreed ?? data.claimed), '이미 받은 금액보다 낮게 합의액·청구액을 바꿀 수 없습니다.'));
       reject(summary.goods > requestedQuantity(data), '이미 받은 교환 수량보다 적게 바꿀 수 없습니다.');
-      reject(ledger.length > 0 && payload.kind !== data.kind, '회수 기록이 있는 건은 처리 종류를 바꿀 수 없습니다.');
-      reject(ledger.length > 0 && payload.currency !== data.currency, '회수 기록이 있는 건은 통화를 바꿀 수 없습니다.');
+      forField('kind', () => reject(ledger.length > 0 && payload.kind !== data.kind, '회수 기록이 있는 건은 처리 종류를 바꿀 수 없습니다.'));
+      forField('currency', () => reject(ledger.length > 0 && payload.currency !== data.currency, '회수 기록이 있는 건은 통화를 바꿀 수 없습니다.'));
       Object.assign(payload, data);
     }, {factsChanged: true});
   }
 
   function transition(ownerId, claimId, version, input) {
     const reason = cleanText(input.reason, 2000);
-    reject(reason.length < 3, '변경 사유를 3자 이상 남겨 주세요.');
+    forField('reason', () => reject(reason.length < 3, '변경 사유를 3자 이상 남겨 주세요.'));
     return mutate(ownerId, claimId, version, `상태 변경 · ${cleanText(input.action, 20)}`, (payload, row) => {
       const summary = totals(payload, repos.ledger.listForClaim(ownerId, claimId));
       payload.lastReason = reason;

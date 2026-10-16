@@ -5,6 +5,7 @@ import {createPreparationController, PREPARATION_DELAY_MS} from '../core/prepara
 // fetched, then opens the editor. Saving goes through the claim detail VM.
 export class DraftViewModel extends Observable {
   #preparation = createPreparationController();
+  #controller = null;
 
   constructor({models, app, detail}) {
     super({preparing: false});
@@ -30,20 +31,27 @@ export class DraftViewModel extends Observable {
         this.app.closeDialog();
         this.app.notify(error.message);
       },
-      onCancel: () => this.setState({preparing: false}),
+      onCancel: () => {
+        this.#controller?.abort();
+        this.setState({preparing: false});
+      },
     });
   }
 
-  // AI first when asked; if it fails for any reason other than consent,
-  // fall back to the rule-based template and say why.
+  // AI first when asked; if it fails for any reason other than consent or
+  // cancellation, fall back to the rule-based template and say why.
   async #suggest(claimId, useAi) {
     if (!useAi) return this.models.claims.draftTemplate(claimId);
+    const controller = new AbortController();
+    this.#controller = controller;
     try {
-      return await this.models.ai.draft(claimId);
+      return await this.models.ai.draft(claimId, {signal: controller.signal});
     } catch (error) {
-      if (error.code === 'ai_consent_required' || error.code === 'session_expired') throw error;
+      if (['ai_consent_required', 'session_expired', 'cancelled'].includes(error.code)) throw error;
       const template = await this.models.claims.draftTemplate(claimId);
       return {...template, notice: `AI 초안을 만들지 못해 기본 틀을 대신 보여드려요. (${error.message})`};
+    } finally {
+      if (this.#controller === controller) this.#controller = null;
     }
   }
 

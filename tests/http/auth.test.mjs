@@ -17,8 +17,10 @@ test('signup, login, logout and session-protected endpoints', async t => {
   assert.equal(me.data.user.email, 'mixed.case@example.test');
   assert.equal(me.data.ai.consented, false);
 
-  assert.equal((await client().call('/api/auth/signup', {method: 'POST', data: {email: 'mixed.case@example.test', password: PASSWORD}})).status, 409);
-  assert.equal((await client().call('/api/auth/signup', {method: 'POST', data: {email: 'short@example.test', password: 'short'}})).status, 422);
+  const taken = await client().call('/api/auth/signup', {method: 'POST', data: {email: 'mixed.case@example.test', password: PASSWORD}});
+  assert.deepEqual([taken.status, taken.data.field], [409, 'email']);
+  const short = await client().call('/api/auth/signup', {method: 'POST', data: {email: 'short@example.test', password: 'short'}});
+  assert.deepEqual([short.status, short.data.field], [422, 'password']);
   assert.equal((await client().call('/api/auth/login', {method: 'POST', data: {email: 'mixed.case@example.test', password: 'wrong-password'}})).status, 401);
 
   const second = await client().login('mixed.case@example.test');

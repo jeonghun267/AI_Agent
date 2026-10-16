@@ -10,7 +10,8 @@ export function renderPreparing({kind, useAi, still}, {session}) {
 export function renderEditor({suggestion}) {
   return {
     title: '문의 내용 확인·저장',
-    body: html`<form id="draft-form" data-key="${newRequestKey()}">
+    // An AI draft took time and API cost to make, so it counts as unsaved input from the start.
+    body: html`<form id="draft-form" data-key="${newRequestKey()}" ${suggestion.origin === 'ai' ? html`data-dirty="true"` : ''}>
       ${suggestion.notice ? html`<div class="ai-note">${suggestion.notice}</div>` : ''}
       ${suggestion.summaryKo ? html`<p class="status-line"><strong>요약</strong> · ${suggestion.summaryKo}</p>` : ''}
       ${suggestion.missingInfo?.length ? html`<div class="notice warning"><span>채워야 할 정보: ${suggestion.missingInfo.join(', ')}</span></div>` : ''}

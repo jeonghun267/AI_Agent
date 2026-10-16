@@ -65,8 +65,16 @@ test('multi-currency amounts round-trip and invalid input is refused', async t =
   })});
   assert.equal(yen.status, 201);
   assert.equal(yen.data.claim.claimed, 4500);
-  for (const patch of [{currency: 'JPY', claimedAmount: '10.5'}, {currency: 'XYZ'}, {vendor: ''}, {claimedAmount: '1.001'}]) {
-    assert.equal((await user.call('/api/claims', {method: 'POST', key: key(), data: claimInput(patch)})).status, 422, JSON.stringify(patch));
+  const cases = [
+    [{currency: 'JPY', claimedAmount: '10.5'}, 'claimedAmount'],
+    [{currency: 'XYZ'}, 'currency'],
+    [{vendor: ''}, 'vendor'],
+    [{claimedAmount: '1.001'}, 'claimedAmount'],
+    [{items: [{name: '', orderedQty: 1, claimQty: 1, unitPrice: '1'}]}, 'items.0.name'],
+  ];
+  for (const [patch, field] of cases) {
+    const result = await user.call('/api/claims', {method: 'POST', key: key(), data: claimInput(patch)});
+    assert.deepEqual([result.status, result.data.field], [422, field], JSON.stringify(patch));
   }
 });
 

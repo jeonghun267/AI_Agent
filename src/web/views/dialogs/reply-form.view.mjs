@@ -9,8 +9,9 @@ export function render(_, {session}) {
       <div class="field full">
         <div class="label-row"><label for="reply-body">받은 답변 원문</label>
           ${session.ai.enabled ? html`<button class="btn small" type="button" data-action="analyze-reply">AI로 번역·분석</button>` : ''}</div>
-        <textarea id="reply-body" name="body" required maxlength="8000" placeholder="판매처 메일이나 채팅 답변을 그대로 붙여 넣으세요."></textarea>
+        <textarea id="reply-body" name="body" required maxlength="8000" placeholder="판매처 메일이나 채팅 답변을 그대로 붙여 넣으세요…"></textarea>
       </div>
+      <div data-ai-slot="reply"></div>
       <div id="reply-analysis"></div>
       <input type="hidden" name="translationKo" value="">
       <input type="hidden" name="summaryKo" value="">
@@ -43,6 +44,7 @@ export const handlers = {
       form.elements.translationKo.value = result.translationKo;
       form.elements.summaryKo.value = result.summaryKo;
       form.dataset.analyzedBody = body;
+      form.dataset.dirty = 'true';
     }),
   },
   submit: {

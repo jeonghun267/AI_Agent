@@ -71,6 +71,15 @@ View ──(사용자 행동)──▶ ViewModel ──▶ Model ──fetch─�
 - **추가만 하는 표**: `ledger`(실제 회수), `drafts`(문의 버전), `audit`(변경 이력)는 DB 트리거로 수정·삭제를 막는다. 잘못된 회수 기록은 정정 항목을 추가해서 고친다. 예외는 회원 탈퇴 때뿐이다(`purges` 표).
 - **재시도 키**: 생성·첨부·초안·회수 기록은 `Idempotency-Key`를 받는다. 응답을 못 받고 다시 보내도 한 번만 처리된다.
 
+## 오류 규칙
+
+- 예상된 실패는 모두 `AppError(status, code, message, field?)`로 던진다. 응답 형태는 `{error, message, field?, requestId}`다.
+- `message`는 사용자에게 그대로 보여 주는 한국어 문장이다. 무엇을 고치면 되는지 쓴다.
+- 입력칸과 관련된 검증은 `forField('입력칸 이름', () => …)`로 감싼다. 그러면 오류에 `field`가 붙는다.
+  - 품목은 `items.<번호>.<칸>`처럼 쓴다. 화면은 이 이름을 클레임 폼의 `<칸>-<번호>` 입력칸으로 바꿔서 그 아래에 오류를 띄운다(`views/components/form-feedback.view.mjs`).
+  - 새 검증을 추가할 때 입력칸이 정해져 있으면 꼭 `forField`를 쓴다.
+- 화면의 느린 요청(AI)은 `AbortController`로 취소할 수 있다. 취소는 `ApiError` code `cancelled`로 온다.
+
 ## 새 기능 추가 체크리스트
 
 ### 클레임에 새 입력칸

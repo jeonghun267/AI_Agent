@@ -1,6 +1,6 @@
 import {scrypt, randomBytes, timingSafeEqual} from 'node:crypto';
 import {promisify} from 'node:util';
-import {reject, AppError} from '../domain/errors.mjs';
+import {reject, AppError, forField} from '../domain/errors.mjs';
 import {newId, nowIso, randomToken, sha256} from '../domain/primitives.mjs';
 import {cleanText, parseEmail, parsePassword} from '../domain/validation.mjs';
 
@@ -20,17 +20,17 @@ export function createAuthService({repos, config}) {
 
   // Creates the account only. signup() also signs the new user in.
   async function register(input) {
-    const email = parseEmail(input.email);
-    const password = parsePassword(input.password);
+    const email = forField('email', () => parseEmail(input.email));
+    const password = forField('password', () => parsePassword(input.password));
     const name = cleanText(input.name, 50) || email.split('@')[0];
-    reject(repos.users.existsByEmail(email), '이미 가입한 이메일입니다. 로그인해 주세요.', 'email_taken', 409);
+    forField('email', () => reject(repos.users.existsByEmail(email), '이미 가입한 이메일입니다. 로그인해 주세요.', 'email_taken', 409));
     const salt = randomBytes(16).toString('hex');
     const passwordHash = await hashPassword(password, salt);
     const id = newId();
     try {
       repos.users.insert({id, email, name, salt, passwordHash, createdAt: nowIso()});
     } catch (error) {
-      if (String(error.message).includes('UNIQUE')) throw new AppError(409, 'email_taken', '이미 가입한 이메일입니다. 로그인해 주세요.');
+      if (String(error.message).includes('UNIQUE')) throw new AppError(409, 'email_taken', '이미 가입한 이메일입니다. 로그인해 주세요.', 'email');
       throw error;
     }
     return repos.users.findById(id);

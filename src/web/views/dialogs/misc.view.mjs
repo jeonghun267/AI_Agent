@@ -44,6 +44,15 @@ export const renderImage = ({url, name}) => ({
   body: html`<img class="evidence-image" src="${url}" alt="${name}"><div class="actions"><a class="btn" href="${url}" download="${name}">다운로드</a></div>`,
 });
 
+export const renderDiscard = () => ({
+  title: '작성 중인 내용이 있어요',
+  body: html`<p>창을 닫으면 지금 입력한 내용이 사라져요.</p>
+    <div class="form-actions">
+      <button class="btn" type="button" data-action="close-overlay">계속 작성</button>
+      <button class="btn danger-fill" type="button" data-action="discard-dialog">버리고 닫기</button>
+    </div>`,
+});
+
 export const renderAiConsent = () => ({
   title: 'AI 처리 동의',
   body: html`<div class="consent">${AI_CONSENT_TEXT}</div>

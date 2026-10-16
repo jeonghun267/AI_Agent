@@ -3,9 +3,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {existsSync} from 'node:fs';
+import {setTimeout as delay} from 'node:timers/promises';
 import {chromium} from 'playwright-core';
 import {startApp, PASSWORD} from '../helpers/app.mjs';
 import {fixtureOrderPdf} from '../../src/server/dev/fixtures.mjs';
+import {createFakeProvider} from '../../src/server/ai/fake.provider.mjs';
 
 const CHROME = [
   process.env.RELO_CHROME_PATH,
@@ -105,4 +107,72 @@ test('sign up, record a claim with AI help and a receipt, then use it on a phone
 
   assert.deepEqual(external, [], 'no requests leave the machine');
   assert.deepEqual(errors, [], 'no script errors');
+});
+
+test('errors appear under the input, unsaved input is protected, slow AI shows progress and can be cancelled', {skip: !CHROME && 'Chrome not found (set RELO_CHROME_PATH)'}, async t => {
+  // Translation answers after 2.5s so the waiting state is visible.
+  const aiProvider = createFakeProvider({'translate-issue': async () => { await delay(2500); return {english: 'Late answer'}; }});
+  const {base, app} = await startApp(t, {aiProvider});
+  const browser = await chromium.launch({executablePath: CHROME, headless: true});
+  t.after(() => browser.close());
+  const page = await (await browser.newContext({viewport: {width: 1280, height: 860}, locale: 'ko-KR'})).newPage();
+  const errors = [];
+  page.on('pageerror', error => errors.push(error.message));
+  const focusedName = () => page.evaluate(() => document.activeElement?.name);
+
+  await page.goto(`${base}/#/signup`);
+  await page.fill('#field-email', 'feedback@example.test');
+  await page.fill('#field-password', PASSWORD);
+  await page.fill('#field-passwordConfirm', PASSWORD);
+  await page.click('#signup-form [type="submit"]');
+  await page.getByRole('button', {name: '첫 클레임 만들기'}).click();
+
+  // 1) Empty submit: Korean messages under the inputs, focus on the first one, nothing sent.
+  await page.click('#claim-form [type="submit"]');
+  await page.locator('#error-claim-form-title').waitFor();
+  assert.equal(await page.locator('#error-claim-form-title').textContent(), '꼭 입력해야 하는 칸이에요.');
+  assert.equal(await focusedName(), 'title');
+  assert.equal(app.db.prepare('SELECT COUNT(*) AS n FROM claims').get().n, 0);
+
+  // 2) A server-side rule names the input; its message appears under that input.
+  await page.fill('#field-title', 'USB-C 허브');
+  assert.equal(await page.locator('#error-claim-form-title').count(), 0, 'typing clears the error');
+  await page.fill('#field-vendor', 'Example Gadgets EU');
+  await page.fill('#field-orderRef', 'EG-FEEDBACK-1');
+  await page.fill('#field-claimedAmount', '1.001');
+  await page.fill('#field-issue', '두 개 중 한 개가 켜지지 않습니다.');
+  await page.fill('#field-name-0', 'USB-C Hub');
+  await page.fill('#field-unitPrice-0', '39.90');
+  await page.click('#claim-form [type="submit"]');
+  await page.locator('#error-claim-form-claimedAmount').waitFor();
+  assert.match(await page.locator('#error-claim-form-claimedAmount').textContent(), /소수점/);
+  assert.equal(await focusedName(), 'claimedAmount');
+  await page.fill('#field-claimedAmount', '39.90');
+
+  // 3) Esc with unsaved input asks first; "계속 작성" keeps everything.
+  await page.keyboard.press('Escape');
+  await page.getByRole('heading', {name: '작성 중인 내용이 있어요'}).waitFor();
+  await page.getByRole('button', {name: '계속 작성'}).click();
+  assert.equal(await page.locator('#modal').evaluate(dialog => dialog.open), true);
+  assert.equal(await page.inputValue('#field-title'), 'USB-C 허브');
+
+  // 4) Slow AI: progress row with a seconds counter, then cancel; the late answer is ignored.
+  await page.getByRole('button', {name: 'AI로 영문 작성'}).click();
+  await page.getByRole('button', {name: '동의하고 계속'}).click();
+  const progress = page.locator('#modal [data-ai-slot="translate"] .ai-progress');
+  await progress.waitFor();
+  assert.match(await progress.textContent(), /AI가 영문 설명을 쓰는 중…/);
+  await page.waitForFunction(() => /[1-9]초/.test(document.querySelector('[data-ai-elapsed]')?.textContent ?? ''));
+  await progress.getByRole('button', {name: '취소'}).click();
+  await progress.waitFor({state: 'detached'});
+  assert.equal(await page.locator('#modal #toast').textContent(), 'AI 작업을 취소했어요.', 'the toast shows inside the open dialog');
+  await page.waitForTimeout(2600);
+  assert.equal(await page.inputValue('#field-issueEnglish'), '');
+
+  // 5) Closing anyway: confirm, then the dialog is gone and nothing was saved.
+  await page.click('#modal .modal-head [data-action="close-dialog"]');
+  await page.getByRole('button', {name: '버리고 닫기'}).click();
+  await page.waitForFunction(() => !document.querySelector('#modal').open);
+  assert.equal(app.db.prepare('SELECT COUNT(*) AS n FROM claims').get().n, 0);
+  assert.deepEqual(errors, []);
 });

@@ -138,7 +138,10 @@ summary { padding: var(--space-1) 0; color: var(--green-ink); font-size: var(--t
 .field textarea { min-height: 104px; padding: var(--space-3); resize: vertical; line-height: 1.6; }
 .field input:focus, .field textarea:focus, .field select:focus, .toolbar input:focus, .toolbar select:focus, .draft-editor:focus { outline: none; border-color: var(--green); box-shadow: 0 0 0 3px #2f8f8033; }
 .field small { display: block; margin-top: var(--space-1); }
-.field input:user-invalid, .field textarea:user-invalid { border-color: var(--danger); }
+.field [aria-invalid="true"], .toolbar [aria-invalid="true"] { border-color: var(--danger); }
+.field [aria-invalid="true"]:focus { box-shadow: 0 0 0 3px #a3383e2e; border-color: var(--danger); }
+.field-error { max-width: none; margin-top: var(--space-1); color: var(--danger); font-size: var(--text-sm); line-height: 1.5; animation: fade-in var(--dur-fast) var(--ease-out); }
+.check + .field-error { margin-top: 0; padding-left: 30px; }
 .item-row { margin: 0 0 var(--space-3); padding: var(--space-4); border: 1px solid var(--line); border-radius: var(--radius-lg); }
 .item-row legend { padding: 0 var(--space-2); color: var(--muted); font-size: var(--text-sm); font-weight: 600; }
 .item-row > .btn { margin-top: var(--space-3); }
@@ -168,6 +171,19 @@ dialog[open]::backdrop { background: #10302f66; transition-duration: var(--dur-b
   opacity: 0; visibility: hidden; transform: translate(-50%, 12px);
   transition: opacity 150ms var(--ease-in), transform 150ms var(--ease-in), visibility 0s linear 150ms; }
 #toast.show { opacity: 1; visibility: visible; transform: translate(-50%, 0); transition: opacity var(--dur-base) var(--ease-out), transform var(--dur-base) var(--ease-out), visibility 0s; }
+
+/* Inside an open dialog the toast moves to the top so it never covers the form buttons. */
+dialog #toast { top: calc(var(--space-3) + env(safe-area-inset-top)); bottom: auto; transform: translate(-50%, -12px); }
+dialog #toast.show { transform: translate(-50%, 0); }
+
+/* ---------- AI progress row (DESIGN.md §9) ---------- */
+.ai-progress { display: flex; align-items: center; gap: var(--space-3); margin-top: var(--space-3); padding: var(--space-3) var(--space-4); border: 1px solid #e2d9ef; border-radius: var(--radius-md); background: var(--ai-bg); color: var(--ai-ink); animation: fade-in var(--dur-fast) var(--ease-out); }
+.ai-progress-text { display: grid; gap: 2px; flex: 1; min-width: 0; }
+.ai-progress-text strong { font-size: var(--text-md); }
+.ai-progress-text small { color: var(--ai-ink); opacity: .85; }
+.ai-elapsed { font-size: var(--text-sm); font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ai-progress .btn { color: var(--ai-ink); }
+.spinner { width: 18px; height: 18px; flex: none; border-radius: var(--radius-full); border: 2px solid currentColor; border-right-color: transparent; animation: spin .8s linear infinite; }
 
 @keyframes spin { to { transform: rotate(360deg); } }
 @keyframes pulse { from { opacity: 1; } to { opacity: .5; } }
