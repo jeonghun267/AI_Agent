@@ -13,7 +13,7 @@ function inputFor(form, field) {
 // Korean messages for the browser's built-in checks, independent of browser language.
 function messageFor(input) {
   const v = input.validity;
-  if (v.valueMissing) return input.type === 'checkbox' ? '확인 체크가 필요해요.' : '꼭 입력해야 하는 칸이에요.';
+  if (v.valueMissing) return {checkbox: '확인 체크가 필요해요.', radio: '하나를 골라 주세요.'}[input.type] ?? '꼭 입력해야 하는 칸이에요.';
   if (v.typeMismatch) return input.type === 'email' ? '이메일 형식을 확인하세요. 예: you@example.com' : 'http:// 또는 https:// 로 시작하는 주소를 입력하세요.';
   if (v.tooShort) return `${input.minLength}자 이상 입력하세요.`;
   if (v.rangeUnderflow) return `${input.min} 이상으로 입력하세요.`;
@@ -43,18 +43,23 @@ export function showFieldError(form, field, message) {
   note.className = 'field-error';
   note.id = id;
   note.textContent = message;
-  (input.type === 'checkbox' ? input.closest('.check') ?? input : input).insertAdjacentElement('afterend', note);
+  // The message goes under the visible control: the checkbox row, the group of
+  // choice cards, or the input with its currency label.
+  const anchor = input.closest('.check, .choices, .input-affix') ?? input;
+  anchor.insertAdjacentElement('afterend', note);
   input.setAttribute('aria-invalid', 'true');
   input.setAttribute('aria-describedby', id);
   return input;
 }
 
-// Runs the browser's checks without its pop-up bubbles. Returns the first wrong input.
-export function validateForm(form) {
-  clearFieldErrors(form);
+// Runs the browser's checks without its pop-up bubbles. Returns the first wrong
+// input. `scope` limits the check to part of the form (one step of a wizard).
+export function validateForm(form, scope = form) {
+  const inside = input => scope === form || scope.contains(input);
+  for (const input of form.querySelectorAll('[aria-invalid="true"]')) if (inside(input)) clearFieldError(input);
   let first = null;
   for (const input of form.elements) {
-    if (!input.willValidate || input.checkValidity()) continue;
+    if (!inside(input) || !input.willValidate || input.checkValidity()) continue;
     showFieldError(form, input.name, messageFor(input));
     first ??= input;
   }

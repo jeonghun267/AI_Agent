@@ -64,6 +64,11 @@ export class DraftViewModel extends Observable {
     if (latest) this.app.openDialog('draft-editor', {suggestion: {body: latest.body, origin: latest.origin, model: latest.model, notice: ''}});
   }
 
+  // An empty editor for a message the user writes from scratch.
+  writeManually() {
+    if (this.detail.state.claim) this.app.openDialog('draft-editor', {suggestion: {body: '', origin: 'manual', model: '', notice: ''}});
+  }
+
   async save(body, suggestion, key) {
     await this.detail.saveDraft({body, origin: suggestion.origin, model: suggestion.model || ''}, key);
     this.app.closeDialog();

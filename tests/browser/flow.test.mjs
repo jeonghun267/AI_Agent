@@ -51,20 +51,29 @@ test('sign up, record a claim with AI help and a receipt, then use it on a phone
   await page.click('#signup-form [type="submit"]');
   await page.getByRole('heading', {name: '아직 등록한 클레임이 없어요'}).waitFor();
 
-  // Create a EUR claim.
-  await page.getByRole('button', {name: '첫 클레임 만들기'}).click();
-  await page.fill('#field-title', 'USB-C 허브');
+  // Create a EUR claim in five steps: basics, money, problem, evidence (skipped), review.
+  const next = () => page.click('#claim-form [data-action="wizard-next"]');
+  await page.getByRole('button', {name: '첫 클레임 등록하기'}).click();
   await page.fill('#field-vendor', 'Example Gadgets EU');
   await page.fill('#field-orderRef', 'EG-BROWSER-1');
+  await page.fill('#field-title', 'USB-C 허브');
+  await next();
   await page.selectOption('#field-currency', 'EUR');
-  await page.fill('#field-claimedAmount', '39.90');
-  await page.fill('#field-agreedAmount', '39.90');
-  await page.fill('#field-issue', '두 개 중 한 개가 켜지지 않습니다.');
   await page.fill('#field-name-0', 'USB-C Hub');
   await page.fill('#field-orderedQty-0', '2');
   await page.fill('#field-unitPrice-0', '39.90');
+  // The problem items' total is offered as the claim amount.
+  await page.getByRole('button', {name: '청구액으로 쓰기'}).click();
+  assert.equal(await page.inputValue('#field-claimedAmount'), '39.90');
+  await page.fill('#field-agreedAmount', '39.90');
+  await next();
+  await page.fill('#field-issue', '두 개 중 한 개가 켜지지 않습니다.');
+  await next();
+  await next();
+  assert.match(await page.locator('#wizard-review').textContent(), /Example Gadgets EU[\s\S]*€39\.90/);
   await page.click('#claim-form [type="submit"]');
   await page.waitForURL(/#\/claims\/[\w-]+\/files$/);
+  assert.equal(await page.locator('.next-card h2').textContent(), '증빙부터 올려 주세요');
 
   // Upload evidence, then read it with AI after giving consent.
   await page.setInputFiles('#upload-file', {name: 'order.pdf', mimeType: 'application/pdf', buffer: fixtureOrderPdf()});
@@ -84,11 +93,13 @@ test('sign up, record a claim with AI help and a receipt, then use it on a phone
   await page.check('#submit-draft-form [name="confirmed"]');
   await page.click('#submit-draft-form [type="submit"]');
   await page.waitForFunction(() => document.querySelector('.detail-title .pill')?.textContent === '판매처 답변 대기');
+  assert.equal(await page.locator('.next-card h2').textContent(), '판매처 답변을 기다리고 있어요');
 
-  // A real partial refund, which survives a reload.
+  // A real partial refund, which survives a reload. The dialog shows the change before saving.
   await page.click('.tabs a[href$="/ledger"]');
   await page.click('[data-action="record-receipt"]');
   await page.fill('#field-amount', '20.00');
+  assert.match(await page.locator('.receipt-preview').textContent(), /€0\.00[\s\S]*€20\.00[\s\S]*0%[\s\S]*50%/);
   await page.fill('#field-transactionRef', 'BANK-BROWSER-1');
   await page.check('#receipt-form [name="confirmed"]');
   await page.click('#receipt-form [type="submit"]');
@@ -100,28 +111,31 @@ test('sign up, record a claim with AI help and a receipt, then use it on a phone
   assert.equal(await pill(), '부분 회수');
   // Progress line and meter: 회수 is the current step, €20.00 of €39.90 is 50%.
   assert.equal(await page.locator('.step[aria-current="step"] .step-label').textContent(), '회수');
-  assert.equal(await page.locator('.progress-card .meter-percent').textContent(), '50%');
+  assert.equal(await page.locator('.money-card .meter-percent').textContent(), '50%');
 
-  // Receiving the rest celebrates once with Dori.
-  await page.click('[data-action="record-receipt"]');
+  // Receiving the rest (from the next-action card) celebrates once with Dori.
+  assert.equal(await page.locator('.next-card h2').textContent(), '남은 금액을 기다리고 있어요');
+  await page.click('.next-card [data-action="record-receipt"]');
   await page.fill('#field-amount', '19.90');
   await page.fill('#field-transactionRef', 'BANK-BROWSER-2');
   await page.check('#receipt-form [name="confirmed"]');
   await page.click('#receipt-form [type="submit"]');
-  await page.getByRole('heading', {name: '합의한 금액을 모두 돌려받았어요'}).waitFor();
+  await page.getByRole('heading', {name: '전액 회수가 완료됐어요'}).waitFor();
   assert.equal(await page.locator('#modal .dori-figure-wrap.is-celebrating').count(), 1);
-  await page.getByRole('button', {name: '좋아요'}).click();
+  await page.getByRole('button', {name: '상세로 돌아가기'}).click();
   await page.waitForFunction(() => !document.querySelector('#modal').open);
-  assert.equal(await page.locator('.progress-card .meter-percent').textContent(), '100%');
+  assert.equal(await page.locator('.money-card .meter-percent').textContent(), '100%');
 
-  // Phone: no sideways scrolling, bottom tab bar, dialogs open as bottom sheets.
+  // Phone: no sideways scrolling, bottom tab bar, home lists the next step,
+  // and the new-claim flow takes the whole screen.
   await page.setViewportSize({width: 375, height: 812});
   await page.goto(`${base}/#/`);
   await page.reload();
-  await page.locator('.summary').waitFor();
+  await page.locator('.kpis').waitFor();
+  assert.equal(await page.locator('.todo-item h3').first().textContent(), '모두 돌려받았어요');
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true, 'no horizontal overflow');
   assert.equal(await page.locator('.nav').evaluate(nav => getComputedStyle(nav).position), 'fixed');
-  await page.click('[data-action="new-claim"]');
+  await page.click('.nav [data-action="new-claim"]');
   await page.locator('#claim-form').waitFor();
   await page.waitForTimeout(400);
   const sheet = await page.locator('#modal').boundingBox();
@@ -147,26 +161,39 @@ test('errors appear under the input, unsaved input is protected, slow AI shows p
   await page.fill('#field-password', PASSWORD);
   await page.fill('#field-passwordConfirm', PASSWORD);
   await page.click('#signup-form [type="submit"]');
-  await page.getByRole('button', {name: '첫 클레임 만들기'}).click();
+  await page.getByRole('button', {name: '첫 클레임 등록하기'}).click();
+  const next = () => page.click('#claim-form [data-action="wizard-next"]');
+  const step = () => page.locator('#claim-form').getAttribute('data-step');
 
-  // 1) Empty submit: Korean messages under the inputs, focus on the first one, nothing sent.
-  await page.click('#claim-form [type="submit"]');
+  // 1) "다음" on an empty step: Korean messages under its inputs, focus on the first one, nothing sent.
+  await next();
   await page.locator('#error-claim-form-title').waitFor();
   assert.equal(await page.locator('#error-claim-form-title').textContent(), '꼭 입력해야 하는 칸이에요.');
-  assert.equal(await focusedName(), 'title');
+  assert.equal(await focusedName(), 'vendor');
+  assert.equal(await step(), '1', 'the step does not change while it has errors');
   assert.equal(app.db.prepare('SELECT COUNT(*) AS n FROM claims').get().n, 0);
 
-  // 2) A server-side rule names the input; its message appears under that input.
+  // 2) A server-side rule names the input; the form goes back to its step and shows the message there.
   await page.fill('#field-title', 'USB-C 허브');
   assert.equal(await page.locator('#error-claim-form-title').count(), 0, 'typing clears the error');
   await page.fill('#field-vendor', 'Example Gadgets EU');
   await page.fill('#field-orderRef', 'EG-FEEDBACK-1');
-  await page.fill('#field-claimedAmount', '1.001');
-  await page.fill('#field-issue', '두 개 중 한 개가 켜지지 않습니다.');
+  await next();
   await page.fill('#field-name-0', 'USB-C Hub');
   await page.fill('#field-unitPrice-0', '39.90');
+  await page.fill('#field-claimedAmount', '1.001');
+  await next();
+  await page.fill('#field-issue', '두 개 중 한 개가 켜지지 않습니다.');
+  await page.keyboard.press('Enter');
+  assert.equal(await step(), '3', 'Enter in a textarea adds a line, it does not move on');
+  await page.click('#claim-form [data-action="wizard-prev"]');
+  await page.locator('#field-claimedAmount').press('Enter');
+  assert.equal(await step(), '3', 'Enter in an input means "다음" before the last step');
+  await next();
+  await next();
   await page.click('#claim-form [type="submit"]');
   await page.locator('#error-claim-form-claimedAmount').waitFor();
+  assert.equal(await step(), '2');
   assert.match(await page.locator('#error-claim-form-claimedAmount').textContent(), /소수점/);
   assert.equal(await focusedName(), 'claimedAmount');
   await page.fill('#field-claimedAmount', '39.90');
@@ -179,6 +206,7 @@ test('errors appear under the input, unsaved input is protected, slow AI shows p
   assert.equal(await page.inputValue('#field-title'), 'USB-C 허브');
 
   // 4) Slow AI: progress row with a seconds counter, then cancel; the late answer is ignored.
+  await next();
   await page.getByRole('button', {name: 'AI로 영문 작성'}).click();
   await page.getByRole('button', {name: '동의하고 계속'}).click();
   const progress = page.locator('#modal [data-ai-slot="translate"] .ai-progress');

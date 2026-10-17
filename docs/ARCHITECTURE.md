@@ -38,12 +38,16 @@ View ──(사용자 행동)──▶ ViewModel ──▶ Model ──fetch─�
 | `main.mjs` | 부트스트랩: HTTP 클라이언트 → Model → ViewModel → View 순서 | |
 | `core/` | 공용 도구: `observable`(상태+구독), `http-client`(유일한 fetch), `html`(자동 이스케이프 템플릿), `dom`, `format`, `hash-router`, `preparation`(도리 최소 표시 시간) | |
 | `models/` | API 한 곳당 함수 하나. 상태 없음 | DOM·상태 금지 |
-| `viewmodels/` | 화면 상태와 명령(`Observable` 상속). 목록 계산은 `select*` 함수 | **DOM·window 접근 금지** |
+| `viewmodels/` | 화면 상태와 명령(`Observable` 상속). 목록 계산은 `select*` 함수. `claim-progress.mjs`에 진행 단계·회수율·**다음 할 일**(`selectNextAction`)·활동 목록, `claim-list.vm.mjs`에 홈 수치·할 일·목록 필터·정렬 | **DOM·window 접근 금지** |
 | `views/` | 상태 → HTML(`render`)과 이벤트 → ViewModel 명령(`handlers`) | **fetch·Model 직접 호출 금지** |
-| `views/app.view.mjs` | 상태가 바뀌면 다시 그리기, 이벤트 위임, 다이얼로그·URL 동기화 | |
-| `styles/` | `base.css`(토큰·레이아웃), `components.css`, `dori.css` | 숫자 대신 토큰 사용 |
+| `views/pages/` | 홈(`dashboard`), 클레임 목록(`claims`), 상세(`claim-detail`), 휴지통, 설정, 로그인 화면 | |
+| `views/components/` | 여러 화면이 쓰는 조각: 아이콘, 클레임 카드, 다음 할 일 카드, 활동 타임라인, 진행 단계·금액 카드, 단계형 폼(`stepper`), 입력 오류 표시 | |
+| `views/app.view.mjs` | 상태가 바뀌면 다시 그리기, 이벤트 위임(click·submit·input·change·파일 끌어 놓기), 다이얼로그·URL 동기화 | |
+| `styles/` | `base.css`(토큰·상단 바·하단 탭), `components.css`(공용 조각), `pages.css`(화면 배치), `dori.css` | 숫자 대신 토큰 사용 |
 
 이 규칙 대부분은 `tests/unit/architecture.test.mjs`가 소스를 읽어 강제한다.
+
+**이벤트 연결 규칙**: 각 view 모듈의 `handlers`에서 `click` 키는 `data-action` 이름, `submit` 키는 폼 id, `input`·`change` 키는 요소 id(그 폼의 모든 칸을 받으려면 `form:<폼 id>`), `drop` 키는 `data-drop` 이름이다. 다이얼로그는 열릴 때 한 번만 그리고 상태가 바뀌어도 다시 그리지 않으므로, 열린 폼 안의 실시간 표시(품목 합계, 회수 미리보기, 증빙 대기 목록)는 view가 그 부분만 직접 고친다.
 
 ## 요청 하나가 지나가는 길
 
@@ -97,7 +101,7 @@ View ──(사용자 행동)──▶ ViewModel ──▶ Model ──fetch─�
 
 1. `domain/claim.mjs` `parseClaimInput`: 검증 추가
 2. 초안 무효 판단에 필요하면 `factualFingerprint`에도 추가
-3. `views/dialogs/claim-form.view.mjs`: 입력칸 추가
+3. `views/dialogs/claim-form.view.mjs`: 알맞은 단계(`basicsFields`·`moneyFields`·`issueFields`)에 입력칸 추가. 수정 폼도 같은 함수를 쓴다. 확인 단계(`renderReview`)에 보여 줄지 정한다
 4. `views/claim-detail/overview.view.mjs`: 표시
 5. `tests/unit/domain.test.mjs`와 `tests/http/claims.test.mjs`에 시험 추가
 

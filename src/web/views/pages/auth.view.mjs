@@ -1,10 +1,18 @@
 import {html} from '../../core/html.mjs';
 import {field, formError} from '../components/ui.view.mjs';
 import {doriFigure} from '../components/dori.view.mjs';
+import {icon} from '../components/icons.view.mjs';
 
 export const brand = () => html`<a class="brand" href="#/"><img src="/assets/dori-mark.svg" alt="" width="36" height="36">ReLo</a>`;
 
 const MISMATCH = '비밀번호가 서로 달라요. 두 칸에 같은 비밀번호를 입력하세요.';
+
+// Three promises the service keeps, said where people decide to trust it.
+const trustList = () => html`<ul class="trust-list">
+  <li>${icon('lock')}내 클레임 기록은 본인만 볼 수 있어요</li>
+  <li>${icon('sparkle')}AI 기능은 동의한 경우에만 작동해요</li>
+  <li>${icon('shield')}판매처에 대신 연락하거나 돈을 받지 않아요</li>
+</ul>`;
 
 // Sign-in screens: one card in the exact centre of the viewport, with Dori
 // standing on its top edge and waving once when the screen opens.
@@ -30,6 +38,7 @@ export function renderLogin({session}) {
     </form>
     ${session.config?.mail?.enabled ? html`<p class="auth-switch"><a href="#/forgot">비밀번호를 잊었어요</a></p>` : ''}
     <p class="auth-switch">처음이신가요? <a href="#/signup">회원가입</a></p>
+    ${trustList()}
     ${demo ? html`<div class="dev-hint">
       <strong>개발 환경 데모 계정</strong>
       <p>${demo.email} / ${demo.password}</p>
@@ -39,8 +48,8 @@ export function renderLogin({session}) {
 
 export function renderSignup() {
   return authScreen(html`
-    <h1>회원가입</h1>
-    <p class="lead">입력한 주문 정보와 증빙은 내 계정에만 저장돼요. 판매처에 자동으로 보내지 않아요.</p>
+    <h1>해외 직구 문제를 쉽게 정리하세요</h1>
+    <p class="lead">주문 정보와 증빙은 내 계정에만 저장돼요. 판매처에 자동으로 보내지 않아요.</p>
     <form id="signup-form">
       <div class="form-grid single">
         ${field('이름 (선택)', 'name', '', {attrs: 'autocomplete="name" maxlength="50"'})}
@@ -51,7 +60,8 @@ export function renderSignup() {
       ${formError()}
       <div class="form-actions"><button class="btn primary wide" type="submit">가입하고 시작하기</button></div>
     </form>
-    <p class="auth-switch">이미 계정이 있나요? <a href="#/login">로그인</a></p>`);
+    <p class="auth-switch">이미 계정이 있나요? <a href="#/login">로그인</a></p>
+    ${trustList()}`);
 }
 
 // #/forgot: ask for the address, then the same confirmation whether or not it has an account.

@@ -15,15 +15,20 @@ const SIGNATURES = {
 };
 export const ALLOWED_FILE_TYPES = Object.keys(SIGNATURES);
 
+// Size and type rules for anything a user sends as a file. Returns a safe name.
+export function checkFile({name, mime, bytes}) {
+  reject(!bytes.length || bytes.length > MAX_FILE_BYTES, '파일은 10MB 이하로 선택하세요.');
+  reject(!SIGNATURES[mime]?.(bytes), 'PNG·JPG·WebP·PDF 파일만 올릴 수 있어요. 파일 형식을 확인하세요.');
+  return cleanText(name, 150).replace(/[\x00-\x1f/\\]/g, '_') || 'evidence';
+}
+
 export function createFileService(ctx) {
   const {db, repos, claims} = ctx;
 
   function upload(ownerId, claimId, version, {name, mime, bytes}, key) {
     claims.requireRow(ownerId, claimId);
-    reject(!bytes.length || bytes.length > MAX_FILE_BYTES, '파일은 10MB 이하로 선택하세요.');
-    reject(!SIGNATURES[mime]?.(bytes), 'PNG·JPG·WebP·PDF 파일만 올릴 수 있어요. 파일 형식을 확인하세요.');
+    const safeName = checkFile({name, mime, bytes});
     const sha = sha256(bytes);
-    const safeName = cleanText(name, 150).replace(/[\x00-\x1f/\\]/g, '_') || 'evidence';
 
     const result = withIdempotency(ctx, ownerId, key, `file:upload:${claimId}`, {version, name: safeName, mime, sha}, () => {
       const row = claims.requireRow(ownerId, claimId);

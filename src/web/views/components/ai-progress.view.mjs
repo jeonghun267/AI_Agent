@@ -7,6 +7,7 @@ const LABEL = {
   translate: 'AI가 영문 설명을 쓰는 중…',
   reply: 'AI가 판매처 답변을 번역·분석하는 중…',
   extract: 'AI가 주문서를 읽는 중…',
+  'extract-doc': 'AI가 주문서를 읽는 중…',
 };
 
 export const SLOW_AFTER_SECONDS = 20;
