@@ -70,4 +70,10 @@ export class AiAssistViewModel extends Observable {
     this.app.openDialog('extraction', {result});
     return result;
   }
+
+  // New-claim flow: read an order document before the claim exists. The
+  // caller fills the form with result.suggestion for the user to check.
+  extractDocument(file) {
+    return this.#run('extract-doc', signal => this.models.ai.extractDocument(file, {signal}));
+  }
 }

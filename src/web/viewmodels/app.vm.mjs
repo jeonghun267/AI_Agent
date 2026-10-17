@@ -39,7 +39,7 @@ export class AppViewModel extends Observable {
     if (route.name === 'forgot' && previous.name !== 'forgot') this.session.clearResetRequest();
     this.setState({route});
     if (!signedIn) return;
-    if (route.name === 'dashboard') await this.list.load({deleted: false});
+    if (route.name === 'dashboard' || route.name === 'claims') await this.list.load({deleted: false});
     if (route.name === 'trash') await this.list.load({deleted: true});
     if (route.name === 'claim') {
       const sameClaim = previous.name === 'claim' && previous.id === route.id && this.detail.state.claim?.id === route.id;

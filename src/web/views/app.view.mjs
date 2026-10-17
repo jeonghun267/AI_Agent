@@ -4,20 +4,25 @@ import {parseHash, routeHash, isLinkHash} from '../core/hash-router.mjs';
 import * as shell from './shell.view.mjs';
 import * as auth from './pages/auth.view.mjs';
 import * as dashboard from './pages/dashboard.view.mjs';
+import * as claims from './pages/claims.view.mjs';
 import * as trash from './pages/trash.view.mjs';
 import * as settings from './pages/settings.view.mjs';
 import * as claimDetail from './pages/claim-detail.view.mjs';
+import * as files from './claim-detail/files.view.mjs';
 import * as claimForm from './dialogs/claim-form.view.mjs';
 import * as receiptForm from './dialogs/receipt-form.view.mjs';
 import * as replyForm from './dialogs/reply-form.view.mjs';
 import * as draftDialogs from './dialogs/draft.view.mjs';
 import * as misc from './dialogs/misc.view.mjs';
+import * as stepper from './components/stepper.view.mjs';
+import * as nextAction from './components/next-action.view.mjs';
 import {aiProgress, aiHint} from './components/ai-progress.view.mjs';
 import {validateForm, showFieldError, clearFieldError} from './components/form-feedback.view.mjs';
 
 // Route name -> page renderer (signed-in pages only).
 const PAGES = {
   dashboard: dashboard.renderDashboard,
+  claims: claims.renderClaims,
   trash: trash.renderTrash,
   settings: settings.renderSettings,
   claim: claimDetail.renderClaimDetail,
@@ -79,13 +84,24 @@ const dialogHandlers = {
   },
 };
 
-// Every view module exports `handlers = {click, submit, input, change}`.
-// click keys are data-action names, submit keys are form ids, input/change keys are element ids.
-const HANDLERS = [shell, auth, dashboard, trash, settings, claimDetail, ...claimDetail.tabViews, claimForm, receiptForm, replyForm, draftDialogs, misc, {handlers: dialogHandlers}]
+// Every view module exports `handlers = {click, submit, input, change, drop}`.
+// click keys are data-action names, submit keys are form ids, drop keys are
+// data-drop names, input/change keys are element ids ("form:<id>" catches any
+// element of that form that has no handler of its own).
+const HANDLER_TYPES = ['click', 'submit', 'input', 'change', 'drop'];
+const HANDLERS = [shell, auth, dashboard, claims, trash, settings, claimDetail, ...claimDetail.tabViews, claimForm, receiptForm, replyForm, draftDialogs, misc, stepper, nextAction, {handlers: dialogHandlers}]
   .reduce((all, view) => {
-    for (const type of ['click', 'submit', 'input', 'change']) Object.assign(all[type], view.handlers?.[type]);
+    for (const type of HANDLER_TYPES) Object.assign(all[type], view.handlers?.[type]);
     return all;
-  }, {click: {}, submit: {}, input: {}, change: {}});
+  }, Object.fromEntries(HANDLER_TYPES.map(type => [type, {}])));
+
+const fieldHandler = (type, el) => HANDLERS[type][el.id] ?? (el.form ? HANDLERS[type][`form:${el.form.id}`] : undefined);
+
+// Puts the keyboard on the field that needs attention, showing its step first.
+function focusField(input) {
+  stepper.revealField(input);
+  input.focus();
+}
 
 function dialogMarkup({title, body}, closeAction) {
   return toMarkup(html`<header class="modal-head"><h2 id="${closeAction}-title">${title}</h2>
@@ -133,10 +149,13 @@ export function mountApp({root, modal, overlay, toast}, vms) {
       setTimeout(() => { if (!element.open) element.innerHTML = ''; }, CLOSE_ANIMATION_MS);
       return;
     }
-    element.innerHTML = dialogMarkup(renderers[current.type](current.props, s), closeAction);
+    const rendered = renderers[current.type](current.props, s);
+    element.innerHTML = dialogMarkup(rendered, closeAction);
+    element.dataset.size = rendered.size ?? '';
     element.setAttribute('aria-labelledby', `${closeAction}-title`);
     if (!element.open) element.showModal();
-    (element.querySelector('input:not([type="hidden"]), textarea, select') ?? focusables(element)[0])?.focus();
+    const firstInput = [...element.querySelectorAll('input:not([type="hidden"]), textarea, select')].find(input => input.getClientRects().length);
+    (element.querySelector('[autofocus]') ?? firstInput ?? focusables(element)[0])?.focus();
   }
 
   function render() {
@@ -144,6 +163,7 @@ export function mountApp({root, modal, overlay, toast}, vms) {
     if (s.session.status === 'loading') renderInto(root, html`<div class="boot" role="status">불러오는 중…</div>`);
     else if (s.session.status !== 'signedIn' || s.app.route.name === 'reset') renderInto(root, (AUTH_PAGES[s.app.route.name] ?? auth.renderLogin)(s));
     else renderInto(root, shell.renderShell(s, PAGES[s.app.route.name]?.(s) ?? ''));
+    files.hydrate(root, vms);
 
     // Fade new content in only when the route (page or tab) changes, never on
     // ordinary re-renders such as typing in the search box.
@@ -152,8 +172,20 @@ export function mountApp({root, modal, overlay, toast}, vms) {
     if (routeKey !== shown.routeKey) {
       shown.routeKey = routeKey;
       root.querySelector('#main')?.classList.add('route-enter');
-      // On narrow screens the tab strip scrolls; keep the current tab visible.
-      root.querySelector('.tabs a.active')?.scrollIntoView({block: 'nearest', inline: 'center'});
+      // A new page starts at the top; switching tabs inside a claim keeps the place.
+      const pageKey = `${s.session.status}:${s.app.route.name}:${s.app.route.id ?? ''}`;
+      if (pageKey !== shown.pageKey) {
+        if (shown.pageKey) window.scrollTo({top: 0});
+        shown.pageKey = pageKey;
+      }
+      // On narrow screens the tab strip scrolls sideways; centre the current tab
+      // without moving the page up or down.
+      const active = root.querySelector('.tabs a.active');
+      if (active) {
+        const strip = active.parentElement;
+        const [tab, box] = [active.getBoundingClientRect(), strip.getBoundingClientRect()];
+        strip.scrollLeft += tab.left - box.left - (box.width - tab.width) / 2;
+      }
     }
 
     if (s.session.status !== 'loading' && location.hash !== hash) {
@@ -230,11 +262,13 @@ export function mountApp({root, modal, overlay, toast}, vms) {
     if (!handler) return;
     event.preventDefault();
     if (form.dataset.saving) return;
+    // In a step-by-step form, Enter before the last step means "다음".
+    if (stepper.interceptSubmit(form)) return;
     const error = form.querySelector('.error');
     if (error) error.textContent = '';
     const firstInvalid = validateForm(form);
     if (firstInvalid) {
-      firstInvalid.focus();
+      focusField(firstInvalid);
       return;
     }
     form.dataset.saving = 'true';
@@ -245,7 +279,7 @@ export function mountApp({root, modal, overlay, toast}, vms) {
       await handler({form, values: formValues(form), vms, event});
     } catch (failure) {
       const input = failure.field ? showFieldError(form, failure.field, failure.message) : null;
-      if (input) input.focus();
+      if (input) focusField(input);
       else showError(form, failure, vms);
     } finally {
       delete form.dataset.saving;
@@ -261,11 +295,35 @@ export function mountApp({root, modal, overlay, toast}, vms) {
       const form = event.target.form;
       // Editing an input clears its error; typing in a dialog marks the form as unsaved.
       clearFieldError(event.target);
-      if (form?.closest('dialog')) form.dataset.dirty = 'true';
-      const handler = HANDLERS[type][event.target.id];
-      if (handler) Promise.resolve(handler({el: event.target, event, vms})).catch(error => vms.app.notify(error.message));
+      if (form?.closest('dialog') && event.target.type !== 'file') form.dataset.dirty = 'true';
+      const handler = fieldHandler(type, event.target);
+      if (handler) Promise.resolve(handler({el: event.target, event, vms})).catch(error => showError(null, error, vms));
     });
   }
+
+  // Dropping files on a [data-drop] area hands them to its handler. Files
+  // dropped anywhere else are ignored instead of opening in the tab.
+  const dropZone = event => event.target.closest?.('[data-drop]');
+  const carriesFiles = event => [...(event.dataTransfer?.types ?? [])].includes('Files');
+  document.addEventListener('dragover', event => {
+    if (!carriesFiles(event)) return;
+    event.preventDefault();
+    const zone = dropZone(event);
+    event.dataTransfer.dropEffect = zone ? 'copy' : 'none';
+    zone?.classList.add('is-over');
+  });
+  document.addEventListener('dragleave', event => {
+    const zone = dropZone(event);
+    if (zone && !zone.contains(event.relatedTarget)) zone.classList.remove('is-over');
+  });
+  document.addEventListener('drop', event => {
+    if (!carriesFiles(event)) return;
+    event.preventDefault();
+    const zone = dropZone(event);
+    zone?.classList.remove('is-over');
+    const handler = zone && HANDLERS.drop[zone.dataset.drop];
+    if (handler) Promise.resolve(handler({el: zone, files: [...event.dataTransfer.files], vms})).catch(error => showError(null, error, vms));
+  });
 
   document.addEventListener('keydown', event => {
     if (event.key !== 'Tab') return;

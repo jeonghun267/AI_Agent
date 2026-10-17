@@ -34,12 +34,14 @@ export function trapFocus(dialog, event) {
   }
 }
 
-// Plain object of a form's named fields. Checkboxes become booleans.
+// Plain object of a form's named fields. Checkboxes become booleans; a radio
+// group gives the value of its checked option.
 export function formValues(form) {
   const values = {};
   for (const element of form.elements) {
     if (!element.name || element.disabled) continue;
     if (element.type === 'checkbox') values[element.name] = element.checked;
+    else if (element.type === 'radio') { if (element.checked) values[element.name] = element.value; }
     else if (element.type === 'file') continue;
     else values[element.name] = element.value;
   }

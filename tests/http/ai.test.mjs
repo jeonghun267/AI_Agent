@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {startApp, createClaim, key} from '../helpers/app.mjs';
 import {createFakeProvider} from '../../src/server/ai/fake.provider.mjs';
 import {createDisabledProvider} from '../../src/server/ai/disabled.provider.mjs';
+import {fixtureOrderPdf} from '../../src/server/dev/fixtures.mjs';
 
 async function consentedUser(client) {
   const user = await client().signup();
@@ -74,6 +75,26 @@ test('draft, translation, reply analysis and extraction return previews without 
   assert.equal((await user.call(`/api/claims/${other.id}/ai/extract`, {method: 'POST', data: {fileId: claim.files[0].id}})).status, 404);
   const stranger = await consentedUser(client);
   assert.equal((await stranger.call(`/api/claims/${claim.id}/ai/draft`, {method: 'POST', data: {}})).status, 404);
+});
+
+test('an order document can be read before the claim exists, and nothing is stored', async t => {
+  const {app, client, aiProvider} = await startApp(t);
+  const user = await client().signup();
+  const read = (raw, mime = 'application/pdf') => user.call('/api/ai/extract', {
+    method: 'POST', raw, headers: {'Content-Type': mime, 'X-File-Name': encodeURIComponent('주문서.pdf')},
+  });
+  assert.equal((await read(fixtureOrderPdf())).data.error, 'ai_consent_required');
+  assert.equal(aiProvider.calls.length, 0, 'nothing is sent before consent');
+
+  await user.call('/api/account/ai-consent', {method: 'POST', data: {consent: true}});
+  const result = await read(fixtureOrderPdf());
+  assert.equal(result.status, 200);
+  assert.equal(result.data.suggestion.vendor, 'Example Gadgets EU');
+  assert.deepEqual(result.data.source, {fileId: null, name: '주문서.pdf'});
+  assert.equal(aiProvider.calls.at(-1).parts[0].file.mime, 'application/pdf');
+  assert.equal((await read(Buffer.from('not a pdf'))).status, 422, 'the file rules of uploads apply');
+  assert.equal(app.db.prepare('SELECT COUNT(*) AS n FROM files').get().n, 0, 'the document is not stored');
+  assert.equal(app.db.prepare("SELECT COUNT(*) AS n FROM ai_usage WHERE capability = 'extract' AND claim_id IS NULL").get().n, 1);
 });
 
 test('malformed model output is rejected and every call counts toward the hourly limit', async t => {

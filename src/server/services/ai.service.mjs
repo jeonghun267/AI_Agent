@@ -4,6 +4,7 @@ import {requireText} from '../domain/validation.mjs';
 import {buildDraftRequest, parseDraftResult} from '../ai/prompts/draft.mjs';
 import {buildIssueTranslationRequest, parseIssueTranslation, buildReplyAnalysisRequest, parseReplyAnalysis} from '../ai/prompts/translate.mjs';
 import {buildExtractRequest, parseExtraction} from '../ai/prompts/extract.mjs';
+import {checkFile} from './file.service.mjs';
 
 // AI suggestions only. Nothing here saves to a claim: the user reviews the
 // result in the web app and saves it through the normal claim/draft/reply APIs.
@@ -66,5 +67,14 @@ export function createAiService({repos, config, claims, files, provider}) {
     return {...result, source: {fileId: file.id, name: file.name}};
   }
 
-  return {status, draft, translateIssue, analyzeReply, extract};
+  // New-claim flow: the same reading for a document that is not stored yet.
+  // The bytes go to the provider and are then dropped; the user attaches the
+  // file as evidence after the claim is created.
+  async function extractDocument(user, {name, mime, bytes}) {
+    const safeName = checkFile({name, mime, bytes});
+    const result = await run(user, null, buildExtractRequest({mime, bytes}), parseExtraction);
+    return {...result, source: {fileId: null, name: safeName}};
+  }
+
+  return {status, draft, translateIssue, analyzeReply, extract, extractDocument};
 }

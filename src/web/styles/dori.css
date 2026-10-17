@@ -53,7 +53,12 @@
 .celebrate h3 { margin: var(--space-2) 0 0; font-size: var(--text-2xl); }
 .celebrate p { color: var(--muted); max-width: 36ch; }
 .celebrate-amount { font-size: 34px; font-weight: 800; letter-spacing: -.03em; color: var(--positive); font-variant-numeric: tabular-nums; }
-.celebrate .btn { margin-top: var(--space-3); min-width: 160px; }
+.celebrate-facts { display: grid; gap: var(--space-1); width: 100%; max-width: 360px; margin: var(--space-1) 0; padding: var(--space-3) var(--space-4); border-radius: var(--radius-md); background: var(--surface-sunken); font-size: var(--text-md); }
+.celebrate-facts div { display: flex; justify-content: space-between; gap: var(--space-4); }
+.celebrate-facts dt { color: var(--muted); }
+.celebrate-facts dd { font-weight: 600; text-align: right; overflow-wrap: anywhere; }
+.celebrate-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--space-2); margin-top: var(--space-3); }
+.celebrate-actions .btn { min-width: 160px; }
 
 @keyframes dori-breathe { 0%, 100% { transform: translateY(0) rotate(-.7deg); } 50% { transform: translateY(-2px) rotate(.7deg); } }
 @keyframes dori-sort {

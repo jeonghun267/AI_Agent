@@ -8,5 +8,10 @@ export function createAiModel(http) {
     translateIssue: (text, {signal} = {}) => http.request('/api/ai/translate-issue', {method: 'POST', data: {text}, signal}),
     analyzeReply: (claimId, body, {signal} = {}) => http.request(`${claimPath(claimId)}/analyze-reply`, {method: 'POST', data: {body}, signal}),
     extract: (claimId, fileId, {signal} = {}) => http.request(`${claimPath(claimId)}/extract`, {method: 'POST', data: {fileId}, signal}),
+    // Reads a document the user picked before the claim exists. Nothing is stored.
+    extractDocument: (file, {signal} = {}) => http.request('/api/ai/extract', {
+      method: 'POST', raw: file, signal,
+      headers: {'Content-Type': file.type, 'X-File-Name': encodeURIComponent(file.name)},
+    }),
   };
 }
