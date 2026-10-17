@@ -53,16 +53,18 @@ export function renderClaimDetail(snapshot) {
   const [, , tabView] = TABS.find(([id]) => id === detail.tab) ?? TABS[0];
 
   return html`<div class="detail">
-    <a class="back-link" href="${claim.deleted ? '#/trash' : '#/claims'}">${icon('back')}${claim.deleted ? '휴지통' : '내 클레임'}</a>
     <section class="hero">
       <div class="hero-main">
-        <p class="hero-vendor">${claim.vendor}<span>${labels.claimKinds[claim.kind]}</span></p>
-        <div class="detail-title"><h1>${claim.title}</h1>${statePill(claim.state, labels.states)}</div>
-        <dl class="meta-list">
-          <div><dt>주문번호</dt><dd>${claim.orderRef}</dd></div>
-          <div><dt>주문일</dt><dd>${shortDate(claim.orderedOn)}</dd></div>
-          <div><dt>마지막 저장</dt><dd>${dateTime(claim.updatedAt)}</dd></div>
-        </dl>
+        <a class="back-link" href="${claim.deleted ? '#/trash' : '#/claims'}">${icon('back')}${claim.deleted ? '휴지통' : '내 클레임'}</a>
+        <div class="hero-title">
+          <p class="hero-vendor">${claim.vendor}<span>${labels.claimKinds[claim.kind]}</span></p>
+          <div class="detail-title"><h1>${claim.title}</h1>${statePill(claim.state, labels.states)}</div>
+          <dl class="meta-list">
+            <div><dt>주문번호</dt><dd>${claim.orderRef}</dd></div>
+            <div><dt>주문일</dt><dd>${shortDate(claim.orderedOn)}</dd></div>
+            <div><dt>마지막 저장</dt><dd>${dateTime(claim.updatedAt)}</dd></div>
+          </dl>
+        </div>
       </div>
       ${moneyCard(claim)}
     </section>

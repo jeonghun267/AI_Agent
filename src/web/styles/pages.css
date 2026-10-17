@@ -63,8 +63,10 @@
 .back-link { display: inline-flex; align-items: center; gap: var(--space-1); width: fit-content; font-size: var(--text-md); font-weight: 600; text-decoration: none; }
 .back-link .icon { width: 18px; height: 18px; }
 .back-link:hover { text-decoration: underline; }
-.hero { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: var(--space-6); align-items: end; }
-.hero-main { display: grid; gap: var(--space-3); min-width: 0; }
+/* Left: the way back at the top, who and what at the bottom, level with the money card. */
+.hero { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: var(--space-6); }
+.hero-main { display: flex; flex-direction: column; justify-content: space-between; gap: var(--space-5); min-width: 0; }
+.hero-title { display: grid; gap: var(--space-3); }
 .hero-vendor { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); font-size: var(--text-md); font-weight: 700; color: var(--green-ink); }
 .hero-vendor span { color: var(--muted); font-weight: 600; }
 .hero-vendor span::before { content: '·'; margin-right: var(--space-2); }
